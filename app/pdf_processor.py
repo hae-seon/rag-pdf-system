@@ -3,9 +3,9 @@ PDF Processing Module
 """
 import os
 from typing import List
-from langchain.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.schema import Document
+from langchain_community.document_loaders import PyPDFLoader  # type: ignore
+from langchain.text_splitter import RecursiveCharacterTextSplitter  # type: ignore
+from langchain_core.documents import Document  # type: ignore
 import logging
 
 logging.basicConfig(level=logging.INFO)

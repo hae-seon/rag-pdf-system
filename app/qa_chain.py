@@ -1,69 +1,45 @@
-"""
-QA Chain - Question Answering with RAG (Gemini Version)
-"""
-from typing import Dict
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+# app/qa_chain.py
+from __future__ import annotations
 import os
-import logging
+from typing import List, Any
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage, HumanMessage  # ← langchain_core 사용!
 
 class QAChain:
-    def __init__(self, vectorstore, model_name: str = "gemini-pro",
-                 temperature: float = 0.2, max_tokens: int = 1000):
-        
-        # Use Google Gemini LLM
-        self.llm = ChatGoogleGenerativeAI(
-            model=model_name,
-            temperature=temperature,
-            max_output_tokens=max_tokens,
-            google_api_key=os.getenv("GOOGLE_API_KEY")
+    def __init__(self, model_name: str | None = None, temperature: float = 0.2):
+        self.model_name = model_name or os.getenv("LLM_MODEL", "gpt-4o-mini")
+        # OPENAI_API_KEY는 환경변수로 설정되어 있어야 합니다.
+        self.llm = ChatOpenAI(model=self.model_name, temperature=temperature)
+
+        self.system_prompt = (
+            "You are a helpful assistant that answers strictly based on the provided context. "
+            "If the answer is not in the context, say you don't know. Answer in Korean."
         )
-        
-        self.prompt_template = """당신은 문서를 기반으로 질문에 답변하는 AI 어시스턴트입니다.
-제공된 컨텍스트를 사용하여 질문에 정확하게 답변하세요.
-컨텍스트에 답이 없으면 "제공된 문서에서 해당 정보를 찾을 수 없습니다"라고 답변하세요.
 
-컨텍스트: {context}
+    def _pack_context(self, contexts: List[Any] | None, max_chars: int = 12000) -> str:
+        if not contexts:
+            return ""
+        parts: List[str] = []
+        total = 0
+        for c in contexts:
+            txt = getattr(c, "page_content", None) or (c.get("page_content") if isinstance(c, dict) else "")
+            if not txt:
+                continue
+            if total + len(txt) > max_chars:
+                remain = max_chars - total
+                if remain > 0:
+                    parts.append(txt[:remain])
+                break
+            parts.append(txt)
+            total += len(txt)
+        return "\n\n".join(parts)
 
-질문: {question}
-
-답변:"""
-        
-        self.prompt = PromptTemplate(
-            template=self.prompt_template,
-            input_variables=["context", "question"]
-        )        
-        self.qa_chain = RetrievalQA.from_chain_type(
-            llm=self.llm,
-            chain_type="stuff",
-            retriever=vectorstore.as_retriever(search_kwargs={"k": 5}),
-            return_source_documents=True,
-            chain_type_kwargs={"prompt": self.prompt}
-        )
-    
-    def ask(self, question: str) -> Dict:
-        try:
-            logger.info(f"Processing question: {question}")
-            result = self.qa_chain({"query": question})
-            
-            response = {
-                "answer": result["result"],
-                "sources": [
-                    {
-                        "content": doc.page_content,
-                        "metadata": doc.metadata
-                    }
-                    for doc in result["source_documents"]
-                ]
-            }
-            
-            logger.info("Question answered successfully")
-            return response
-        except Exception as e:
-            logger.error(f"Error during QA: {e}")
-            raise
+    def answer(self, question: str, contexts: List[Any] | None = None) -> str:
+        ctx = self._pack_context(contexts)
+        messages = [
+            SystemMessage(content=self.system_prompt),
+            HumanMessage(content=f"Context:\n{ctx}\n\nQuestion:\n{question}"),
+        ]
+        resp = self.llm.invoke(messages)
+        return (resp.content or "").strip() or "맥락에서 확실한 답을 찾지 못했습니다."

@@ -5,6 +5,8 @@ import streamlit as st
 import os
 from main import RAGSystem
 from dotenv import load_dotenv
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
 
 load_dotenv()
 
@@ -17,6 +19,16 @@ st.set_page_config(
 
 st.title("📚 RAG PDF 질의응답 시스템")
 st.markdown("PDF 문서를 업로드하고 질문해보세요!")
+
+if st.sidebar.button("🔍 벡터 인덱스 미리보기"):
+    VECTOR_PATH = "../data/vectors/index"
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    db = FAISS.load_local(VECTOR_PATH, embeddings, allow_dangerous_deserialization=True)
+    st.success(f"총 {len(db.index_to_docstore_id)}개의 청크가 저장되어 있습니다.")
+    docs = db.similarity_search("test", k=3)
+    for d in docs:
+        st.markdown(f"**페이지**: {d.metadata.get('page', '?')}")
+        st.write(d.page_content[:300] + "...")
 
 # Initialize session state
 if 'rag_system' not in st.session_state:
