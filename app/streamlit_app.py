@@ -25,7 +25,7 @@ if st.sidebar.button("🔍 벡터 인덱스 미리보기"):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     db = FAISS.load_local(VECTOR_PATH, embeddings, allow_dangerous_deserialization=True)
     st.success(f"총 {len(db.index_to_docstore_id)}개의 청크가 저장되어 있습니다.")
-    docs = db.similarity_search("test", k=3)
+    docs = db.similarity_search("test", k=10)
     for d in docs:
         st.markdown(f"**페이지**: {d.metadata.get('page', '?')}")
         st.write(d.page_content[:300] + "...")
