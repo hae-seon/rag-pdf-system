@@ -1,115 +1,172 @@
-"""
-Streamlit UI for RAG PDF System
-"""
 import streamlit as st
-import os
 from main import RAGSystem
-from dotenv import load_dotenv
-from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
 
-load_dotenv()
-
-# Page config
 st.set_page_config(
-    page_title="RAG PDF 질의응답 시스템",
+    page_title="RAG PDF System - VectorDB 뷰어",
     page_icon="📚",
-    layout="wide"
+    layout="wide",
 )
 
-st.title("📚 RAG PDF 질의응답 시스템")
-st.markdown("PDF 문서를 업로드하고 질문해보세요!")
+# -----------------------------
+# RAGSystem 한 번만 생성
+# -----------------------------
+@st.cache_resource
+def get_rag_system():
+    return RAGSystem()
 
-if st.sidebar.button("🔍 벡터 인덱스 미리보기"):
-    VECTOR_PATH = "./data/vectors/index"  # ← 상대경로 통일
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    db = FAISS.load_local(VECTOR_PATH, embeddings, allow_dangerous_deserialization=True)
-    st.success(f"총 {len(db.index_to_docstore_id)}개의 청크가 저장되어 있습니다.")
-    docs = db.similarity_search("test", k=10)
-    for d in docs:
-        st.markdown(f"**페이지**: {d.metadata.get('page', '?')}")
-        st.write(d.page_content[:300] + "...")
+rag = get_rag_system()
 
-# Initialize session state
-if 'rag_system' not in st.session_state:
-    st.session_state.rag_system = RAGSystem()
-    st.session_state.pdf_loaded = False
+# index 로드 상태 플래그
+if "index_loaded" not in st.session_state:
+    st.session_state["index_loaded"] = False
 
-# Sidebar
-with st.sidebar:
-    st.header("⚙️ 설정")
+st.sidebar.title("RAG PDF System")
+st.sidebar.markdown("벡터DB에 **이미 저장된 인덱스만** 사용합니다.")
 
-    # PDF Upload
-    st.subheader("1. PDF 업로드")
-    uploaded_file = st.file_uploader("PDF 파일 선택", type=['pdf'])
-
-    if uploaded_file and st.button("PDF 처리 시작"):
-        with st.spinner("PDF 처리 중..."):
-            try:
-                # Save uploaded file
-                pdf_dir = os.getenv("PDF_STORAGE_PATH", "./data/pdfs")
-                os.makedirs(pdf_dir, exist_ok=True)
-                pdf_path = os.path.join(pdf_dir, uploaded_file.name)
-
-                with open(pdf_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-
-                # Process PDF
-                st.session_state.rag_system.ingest_pdf(pdf_path)
-                st.session_state.pdf_loaded = True
-                st.success("✅ PDF 처리 완료!")
-            except Exception as e:
-                st.error(f"❌ 오류 발생: {str(e)}")
-
-    st.divider()
-
-    # Load existing index
-    st.subheader("2. 기존 인덱스 로드")
-    if st.button("저장된 인덱스 불러오기"):
+# -----------------------------
+# 인덱스 로드 버튼
+# -----------------------------
+if not st.session_state["index_loaded"]:
+    if st.sidebar.button("🔄 벡터 인덱스 로드하기", use_container_width=True):
         try:
-            st.session_state.rag_system.load_existing_index()
-            st.session_state.pdf_loaded = True
-            st.success("✅ 인덱스 로드 완료!")
+            rag.load_existing_index()
+            st.session_state["index_loaded"] = True
+            st.sidebar.success("✅ 인덱스 로드 완료")
         except Exception as e:
-            st.error(f"❌ 오류 발생: {str(e)}")
-
-    st.divider()
-    st.info("💡 먼저 PDF를 업로드하거나 기존 인덱스를 로드해주세요.")
-
-# Main area
-if st.session_state.pdf_loaded:
-    st.success("🎉 시스템 준비 완료! 질문을 입력해주세요.")
-
-    # Question input
-    question = st.text_input("❓ 질문을 입력하세요:", placeholder="예: 이 문서의 주요 내용은 무엇인가요?")
-
-    if st.button("🔍 질문하기", type="primary"):
-        if question:
-            with st.spinner("답변 생성 중..."):
-                try:
-                    result = st.session_state.rag_system.query(question)
-
-                    # Display answer
-                    st.markdown("### 📝 답변")
-                    st.info(result['answer'])
-
-                    # Display sources
-                    st.markdown("### 📚 참고 문서")
-                    for i, source in enumerate(result['sources'], 1):
-                        with st.expander(f"출처 {i} - {source['metadata'].get('source_file', 'Unknown')} (페이지 {source['metadata'].get('page', 'N/A')})"):
-                            st.text(source['content'])
-
-                except Exception as e:
-                    st.error(f"❌ 오류 발생: {str(e)}")
-        else:
-            st.warning("⚠️ 질문을 입력해주세요.")
+            st.sidebar.error(f"인덱스 로드 실패: {e}")
 else:
-    st.warning("⚠️ 먼저 PDF를 업로드하거나 기존 인덱스를 로드해주세요.")
+    st.sidebar.success("✅ 인덱스 로드됨")
 
-    # Example questions
-    st.markdown("### 📖 사용 방법")
-    st.markdown("""
-    1. **사이드바**에서 PDF 파일을 업로드하거나 기존 인덱스를 로드하세요
-    2. 질문을 입력하고 **질문하기** 버튼을 클릭하세요
-    3. AI가 문서 내용을 기반으로 답변을 제공합니다
-    """)
+
+st.title("📚 VectorDB 기반 QA & 청크 미리보기")
+
+if not st.session_state["index_loaded"]:
+    st.info("왼쪽 사이드바에서 **[벡터 인덱스 로드하기]** 버튼을 먼저 눌러주세요.")
+    st.stop()
+
+# 여기까지 왔으면 벡터스토어는 로드된 상태
+db = rag.vector_store.vectorstore
+
+# -----------------------------
+# 상단: 전체 정보 요약
+# -----------------------------
+col1, col2 = st.columns(2)
+
+with col1:
+    try:
+        total_chunks = len(db.index_to_docstore_id)
+        st.metric("총 벡터(청크) 수", total_chunks)
+    except Exception:
+        st.write("총 벡터 수를 가져올 수 없습니다 (FAISS 구조 변경?).")
+
+with col2:
+    st.write("인덱스 저장 경로:", rag.vector_store.store_path)
+
+st.markdown("---")
+
+# -----------------------------
+# 탭: 질문 / 청크 미리보기
+# -----------------------------
+tab_qna, tab_preview = st.tabs(["💬 질문하기", "🔎 청크 미리보기"])
+
+# =============================
+# 1) 질문 탭 - 이미 있는 VectorDB로만 QA
+# =============================
+with tab_qna:
+    st.subheader("💬 벡터DB 기반 질문하기")
+
+    question = st.text_area(
+        "질문을 입력하세요 (PDF 업로드 없이, 기존 인덱스만 사용)",
+        height=100,
+        placeholder="예) 약전에 대해서 알려줘",
+    )
+
+
+    if st.button("질문 실행", type="primary"):
+        if not question.strip():
+            st.warning("질문을 입력해주세요.")
+        else:
+            with st.spinner("생각 중..."):
+                try:
+                    # RAGSystem.query()가 dict 또는 str을 반환한다고 가정
+                    result = rag.query(question)
+
+                    # 반환 타입에 맞춰 안전하게 처리
+                    if isinstance(result, dict):
+                        answer = result.get("answer") or result.get("result") or str(result)
+                    else:
+                        answer = str(result)
+
+                    st.markdown("### ✅ 답변")
+                    st.write(answer)
+
+                    # 소스 문서도 같이 보여주기 (있으면)
+                    source_docs = None
+                    if isinstance(result, dict):
+                        source_docs = result.get("source_documents") or result.get("sources")
+
+                    if source_docs:
+                        st.markdown("### 📎 참고한 청크들")
+                        for i, doc in enumerate(source_docs, start=1):
+                            st.markdown(f"**참고 청크 {i}**")
+                            meta = doc.metadata or {}
+                            st.write(f"- page: {meta.get('page', '?')}")
+                            st.write(f"- source: {meta.get('source', 'N/A')}")
+                            st.code(doc.page_content, language="markdown")
+                    else:
+                        st.caption("참고 청크 정보가 result에 포함되지 않았습니다.")
+                except Exception as e:
+                    st.error(f"질문 처리 중 오류: {e}")
+
+# =============================
+# 2) 청크 미리보기 탭
+# =============================
+with tab_preview:
+    st.subheader("🔎 인덱스 안에 들어있는 청크 미리보기")
+
+    mode = st.radio(
+        "보기 모드 선택",
+        ["검색으로 보기", "그냥 앞쪽 N개 보기"],
+        horizontal=True,
+    )
+
+    if mode == "검색으로 보기":
+        query = st.text_input("검색 쿼리", value="test")
+        k = st.slider("가져올 청크 개수 (k)", 1, 20, 5)
+
+        if st.button("🔍 검색 실행"):
+            try:
+                docs = rag.vector_store.search(query, k=k)
+
+                if not docs:
+                    st.warning("검색 결과가 없습니다.")
+                else:
+                    for i, d in enumerate(docs, start=1):
+                        st.markdown(f"#### 결과 {i}")
+                        meta = d.metadata or {}
+                        st.write(f"- page: {meta.get('page', '?')}")
+                        st.write(f"- source: {meta.get('source', 'N/A')}")
+                        st.code(d.page_content, language="markdown")
+            except Exception as e:
+                st.error(f"검색 중 오류: {e}")
+
+    else:  # 그냥 앞쪽 N개 보기
+        n = st.slider("앞에서부터 볼 청크 개수", 1, 30, 5)
+
+        if st.button("📄 청크 목록 보기"):
+            try:
+                # FAISS 내부 docstore에서 직접 꺼내기
+                store = db.docstore._dict  # 기본 FAISS 구조 기준
+                items = list(store.items())[:n]
+
+                if not items:
+                    st.warning("docstore 안에 데이터가 없습니다.")
+                else:
+                    for i, (key, doc) in enumerate(items, start=1):
+                        st.markdown(f"#### 청크 {i} (key={key})")
+                        meta = doc.metadata or {}
+                        st.write(f"- page: {meta.get('page', '?')}")
+                        st.write(f"- source: {meta.get('source', 'N/A')}")
+                        st.code(doc.page_content, language="markdown")
+            except Exception as e:
+                st.error(f"청크 조회 중 오류: {e}")
