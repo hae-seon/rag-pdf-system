@@ -31,14 +31,50 @@ class VectorStoreManager:
 
     def create_vectorstore(self, documents: List[Document]) -> None:
         logger.info(f"Creating {self.store_type} vector store with OpenAI embeddings...")
+
         if self.store_type == "faiss":
-            self.vectorstore = FAISS.from_documents(documents, self.embeddings)
+            # 배치 처리: OpenAI API 토큰 제한(300k)을 피하기 위해 청크를 나눔
+            batch_size = 100  # 한 번에 100개 문서씩 처리
+            total_docs = len(documents)
+
+            logger.info(f"Total documents: {total_docs}")
+            logger.info(f"Processing in batches of {batch_size}")
+
+            # 첫 배치로 벡터스토어 초기화
+            first_batch = documents[:batch_size]
+            self.vectorstore = FAISS.from_documents(first_batch, self.embeddings)
+            logger.info(f"Initialized with first batch: {len(first_batch)} documents")
+
+            # 나머지 배치 추가
+            for i in range(batch_size, total_docs, batch_size):
+                batch = documents[i:i+batch_size]
+                logger.info(f"Processing batch {i//batch_size + 1}: documents {i} to {min(i+batch_size, total_docs)}")
+                batch_vectorstore = FAISS.from_documents(batch, self.embeddings)
+                self.vectorstore.merge_from(batch_vectorstore)
+                logger.info(f"Added {len(batch)} documents to vector store")
+
         elif self.store_type == "chroma":
+            # Chroma도 배치 처리 적용
+            batch_size = 100
+            total_docs = len(documents)
+
+            logger.info(f"Total documents: {total_docs}")
+            logger.info(f"Processing in batches of {batch_size}")
+
+            # 첫 배치로 초기화
+            first_batch = documents[:batch_size]
             self.vectorstore = Chroma.from_documents(
-                documents, self.embeddings, persist_directory=self.store_path
+                first_batch, self.embeddings, persist_directory=self.store_path
             )
+
+            # 나머지 배치 추가
+            for i in range(batch_size, total_docs, batch_size):
+                batch = documents[i:i+batch_size]
+                logger.info(f"Processing batch {i//batch_size + 1}: documents {i} to {min(i+batch_size, total_docs)}")
+                self.vectorstore.add_documents(batch)
         else:
             raise ValueError(f"Unsupported store_type: {self.store_type}")
+
         logger.info(f"Vector store created with {len(documents)} documents")
 
     def save_vectorstore(self, name: str = "index") -> None:
