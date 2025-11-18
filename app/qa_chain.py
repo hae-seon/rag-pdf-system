@@ -3,14 +3,17 @@ from __future__ import annotations
 import os
 from typing import List, Any
 
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage  # ← langchain_core 사용!
+from langchain_community.llms import Ollama
 
 class QAChain:
     def __init__(self, model_name: str | None = None, temperature: float = 0.2):
-        self.model_name = model_name or os.getenv("LLM_MODEL", "gpt-4o-mini")
-        # OPENAI_API_KEY는 환경변수로 설정되어 있어야 합니다.
-        self.llm = ChatOpenAI(model=self.model_name, temperature=temperature)
+        self.model_name = model_name or os.getenv("LLM_MODEL", "qwen2")
+        # Ollama를 통해 Qwen2 모델 사용
+        self.llm = Ollama(
+            model=self.model_name,
+            temperature=temperature,
+            base_url="http://localhost:11434"
+        )
 
         self.system_prompt = (
             "You are a helpful assistant that answers strictly based on the provided context. "
@@ -37,9 +40,14 @@ class QAChain:
 
     def answer(self, question: str, contexts: List[Any] | None = None) -> str:
         ctx = self._pack_context(contexts)
-        messages = [
-            SystemMessage(content=self.system_prompt),
-            HumanMessage(content=f"Context:\n{ctx}\n\nQuestion:\n{question}"),
-        ]
-        resp = self.llm.invoke(messages)
-        return (resp.content or "").strip() or "맥락에서 확실한 답을 찾지 못했습니다."
+        prompt = f"""{self.system_prompt}
+
+Context:
+{ctx}
+
+Question:
+{question}
+
+Answer:"""
+        resp = self.llm.invoke(prompt)
+        return (resp or "").strip() or "맥락에서 확실한 답을 찾지 못했습니다."

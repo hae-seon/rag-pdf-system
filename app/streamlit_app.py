@@ -10,88 +10,143 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# -----------------------------
-# 공통 CSS (질문 박스 + 답변 박스 스타일)
-# -----------------------------
+# 모던 CSS 스타일
 st.markdown(
     """
     <style>
+    /* 전체 배경 */
     .main {
-        background-color: #f5f5f5;
-        background-image: repeating-linear-gradient(
-            -45deg,
-            #f5f5f5,
-            #f5f5f5 10px,
-            #f0f0f0 10px,
-            #f0f0f0 20px
-        );
+        background: linear-gradient(135deg, #f5f7fa 0%, #e3e8f0 100%);
     }
 
+    /* 헤더 */
+    h1, h2, h3 {
+        color: #1e3a8a;
+        font-weight: 700;
+    }
+
+    /* 사이드바 */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #1e3a8a 0%, #3b82f6 100%);
+    }
+
+    section[data-testid="stSidebar"] * {
+        color: white !important;
+    }
+
+    /* 질문 입력 영역 */
     .question-title {
         text-align: center;
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
-
-    div.stTextArea {
-        position: relative;
-    }
-    div.stTextArea::before {
-        content: "+";
-        position: absolute;
-        left: 14px;
-        top: 11px;
         font-size: 20px;
-        font-weight: 600;
-        color: #444;
-        z-index: 10;
-    }
-    div.stTextArea textarea {
-        padding-left: 32px !important;
-        border-radius: 8px !important;
-        font-size: 15px !important;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: #1e3a8a;
     }
 
+    div.stTextArea textarea {
+        border-radius: 12px !important;
+        border: 2px solid #3b82f6 !important;
+        font-size: 16px !important;
+        padding: 16px !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    div.stTextArea textarea:focus {
+        border-color: #1e3a8a !important;
+        box-shadow: 0 6px 12px rgba(59,130,246,0.3);
+    }
+
+    /* 답변 섹션 */
     .answer-section {
-        background-color: #fdfdfd;
-        border: 1px solid #cfcfcf;
-        border-radius: 6px;
-        padding: 10px 12px;
-        font-size: 14px;
-        line-height: 1.5;
-        margin-bottom: 10px;
+        background: white;
+        border: none;
+        border-left: 4px solid #3b82f6;
+        border-radius: 12px;
+        padding: 20px;
+        font-size: 15px;
+        line-height: 1.8;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
     .section-title {
+        color: #1e3a8a;
         font-weight: 700;
-        margin-bottom: 4px;
+        font-size: 16px;
+        margin-bottom: 12px;
     }
 
     .source-path {
         font-size: 12px;
-        color: #666;
+        color: #64748b;
+        margin-top: 4px;
     }
 
-    /* 사이드바 스타일 개선 */
-    section[data-testid="stSidebar"] {
-        background-color: #2c3e50;
-        color: white;
-    }
-
-    section[data-testid="stSidebar"] .stMarkdown {
-        color: white;
-    }
-
-    /* 버튼 스타일 통일 */
+    /* 버튼 */
     .stButton button {
-        border-radius: 6px;
-        font-weight: 500;
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 0.6rem 1.5rem;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
-    /* 컬럼 간격 조정 */
+    .stButton button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+
+    /* 메트릭 */
+    [data-testid="stMetricValue"] {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+
+    /* 라디오 버튼 */
+    .stRadio > label {
+        font-weight: 600;
+        color: #1e3a8a;
+    }
+
+    /* 익스팬더 */
+    .streamlit-expanderHeader {
+        background-color: #f1f5f9;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    /* 성공/에러 메시지 */
+    .stSuccess {
+        background-color: #d1fae5;
+        color: #065f46;
+        border-radius: 8px;
+    }
+
+    .stError {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border-radius: 8px;
+    }
+
+    .stInfo {
+        background-color: #dbeafe;
+        color: #1e40af;
+        border-radius: 8px;
+    }
+
+    /* 구분선 */
+    hr {
+        margin: 2rem 0;
+        border: none;
+        border-top: 2px solid #e2e8f0;
+    }
+
+    /* 컬럼 간격 */
     [data-testid="column"] {
-        padding: 0 10px;
+        padding: 0 12px;
     }
     </style>
     """,
@@ -485,13 +540,15 @@ elif menu_option == "요약 및 비교":
         with col2:
             country1 = st.selectbox(
                 "기준 약전",
-                ["KP (대한약전 12개정)", "KP (대한약전 11개정)", "KP (대한약전 10개정)"],
+                ["KP (대한약전 12개정)", "KP (대한약전 11개정)", "KP (대한약전 10개정)",
+                 "JP (일본약전 18.0)", "USP (미국약전 44)", "EP (유럽약전 11)"],
                 key="country1"
             )
 
             country2 = st.selectbox(
                 "비교 약전",
-                ["JP (일본약전 18.0)", "USP (미국약전 44)", "EP (유럽약전 11)"],
+                ["JP (일본약전 18.0)", "USP (미국약전 44)", "EP (유럽약전 11)",
+                 "KP (대한약전 12개정)", "KP (대한약전 11개정)", "KP (대한약전 10개정)"],
                 key="country2"
             )
 
@@ -567,83 +624,93 @@ elif menu_option == "요약 및 비교":
                         st.error(f"비교 처리 중 오류: {e}")
 
     # =============================
-    # 2-2) 개정 전/후 비교
+    # 2-2) 개정 전/후 비교 (변경대비표 활용)
     # =============================
     elif compare_type == "개정 전/후 비교":
         st.subheader("📋 개정 전/후 비교")
+        st.info("💡 대한민국약전 일부개정고시 변경대비표를 기반으로 검색합니다")
 
-        col1, col2 = st.columns(2)
-
-        with col1:
-            revision_type = st.selectbox(
-                "비교 대상",
-                ["의약품/성분", "시험법", "표준시약 및 시액"],
-                key="revision_type"
-            )
-
-            item_name = st.text_input(
-                f"{revision_type} 이름",
-                placeholder=f"예: {'아스피린' if revision_type == '의약품/성분' else '용출시험법'}",
-                key="revision_item_name"
-            )
-
-        with col2:
-            version_before = st.selectbox(
-                "개정 전 버전",
-                ["대한약전 11개정", "대한약전 10개정", "대한약전 9개정"],
-                key="version_before"
-            )
-
-            version_after = st.selectbox(
-                "개정 후 버전",
-                ["대한약전 12개정", "대한약전 11개정", "대한약전 10개정"],
-                key="version_after"
-            )
-
-        compare_method_rev = st.selectbox(
-            "비교방법",
-            ["변경대비표", "나란히 비교", "차이점만 표시"],
-            key="compare_method_rev"
+        item_name = st.text_input(
+            "의약품/성분명 또는 검색어",
+            placeholder="예: 아스피린, 용출시험법, 잔류용매 등",
+            key="revision_item_name"
         )
 
-        if st.button("🔍 개정 비교 실행", type="primary", key="run_revision_compare"):
+        if st.button("🔍 변경사항 검색", type="primary", key="run_revision_compare"):
             if not item_name.strip():
-                st.warning(f"{revision_type} 이름을 입력해주세요.")
+                st.warning("검색어를 입력해주세요.")
             else:
-                with st.spinner("개정 전/후 비교 중..."):
+                with st.spinner("변경대비표에서 검색 중..."):
                     try:
+                        # 변경대비표 PDF에서 검색
                         prompt = (
-                            f"{version_before}의 {item_name}과 {version_after}의 {item_name}을 "
-                            f"{compare_method_rev} 방식으로 비교해줘.\n\n"
-                            "다음을 중심으로 정리해줘:\n"
-                            "1. 주요 변경사항\n"
-                            "2. 추가된 내용\n"
-                            "3. 삭제된 내용\n"
-                            "4. 수정된 내용"
+                            f"대한민국약전 일부개정고시 변경대비표에서 '{item_name}'에 대한 변경사항을 찾아서 다음을 설명해줘:\n\n"
+                            "1. 개정 전 내용\n"
+                            "2. 개정 후 내용\n"
+                            "3. 주요 변경사항 요약\n"
+                            "4. 변경 사유 (있는 경우)\n\n"
+                            "변경대비표 형식으로 정리해서 보여줘."
                         )
 
                         result = rag.query(prompt)
 
                         if isinstance(result, dict):
                             answer = result.get("answer") or result.get("result") or str(result)
+                            source_docs = result.get("source_documents") or result.get("sources")
                         else:
                             answer = str(result)
+                            source_docs = None
 
-                        st.markdown("### 📊 개정 비교 결과")
+                        st.markdown("### 📊 개정 변경사항")
 
-                        st.markdown(
-                            "<div class='answer-section'>"
-                            "<div class='section-title'>[개정 전/후 비교 결과]</div>"
-                            f"<b>{revision_type}</b>: {item_name}<br>"
-                            f"<b>개정 전</b>: {version_before}<br>"
-                            f"<b>개정 후</b>: {version_after}<br><br>"
-                            f"{answer.replace(chr(10), '<br>')}"
-                            "</div>",
-                            unsafe_allow_html=True,
-                        )
+                        col_answer, col_source = st.columns([2, 1])
+
+                        with col_answer:
+                            st.markdown(
+                                "<div class='answer-section'>"
+                                "<div class='section-title'>[변경대비표 검색 결과]</div>"
+                                f"<b>검색어</b>: {item_name}<br><br>"
+                                f"{answer.replace(chr(10), '<br>')}"
+                                "</div>",
+                                unsafe_allow_html=True,
+                            )
+
+                        with col_source:
+                            st.markdown("### 📄 출처")
+                            if source_docs:
+                                from collections import defaultdict
+                                pdf_pages = defaultdict(set)
+
+                                for doc in source_docs:
+                                    meta = getattr(doc, "metadata", {}) or {}
+                                    source_path = meta.get("source", "알 수 없음")
+                                    page = meta.get("page", None)
+                                    if page is not None:
+                                        pdf_pages[source_path].add(page)
+                                    else:
+                                        _ = pdf_pages[source_path]
+
+                                for src, pages in pdf_pages.items():
+                                    filename = os.path.basename(src)
+                                    if pages:
+                                        page_list = ", ".join(str(p+1) for p in sorted(pages))
+                                        st.info(f"📖 **{filename}**\n\n페이지: {page_list}")
+                                    else:
+                                        st.info(f"📖 **{filename}**")
+
+                                # 문서 내용 미리보기
+                                with st.expander("📋 원문 미리보기"):
+                                    for i, doc in enumerate(source_docs[:3], 1):
+                                        st.markdown(f"**문서 {i}**")
+                                        preview = doc.page_content[:400] + "..." if len(doc.page_content) > 400 else doc.page_content
+                                        st.text(preview)
+                                        if i < len(source_docs[:3]):
+                                            st.markdown("---")
+                            else:
+                                st.warning("출처 정보가 없습니다")
 
                     except Exception as e:
-                        st.error(f"개정 비교 처리 중 오류: {e}")
+                        st.error(f"검색 중 오류: {e}")
 
     # =============================
     # 2-3) 자유 텍스트 비교

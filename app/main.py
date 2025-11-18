@@ -37,7 +37,7 @@ class RAGSystem:
     def _ensure_qa_chain(self):
         if self.qa_chain is None:
             self.qa_chain = QAChain(
-                model_name=os.getenv("LLM_MODEL", "gpt-4o-mini"),
+                model_name=os.getenv("LLM_MODEL", "qwen2"),
                 temperature=float(os.getenv("LLM_TEMPERATURE", 0.2)),
             )
 
