@@ -10,6 +10,12 @@ from PIL import Image
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Poppler 경로 설정 (프로젝트 루트 기준)
+POPPLER_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)),
+    "tools", "poppler", "poppler-24.08.0", "Library", "bin"
+)
+
 
 def pdf_page_to_image(pdf_path: str, page_number: int, dpi: int = 150) -> Optional[Image.Image]:
     """
@@ -33,7 +39,8 @@ def pdf_page_to_image(pdf_path: str, page_number: int, dpi: int = 150) -> Option
             pdf_path,
             dpi=dpi,
             first_page=page_number + 1,  # pdf2image는 1부터 시작
-            last_page=page_number + 1
+            last_page=page_number + 1,
+            poppler_path=POPPLER_PATH if os.path.exists(POPPLER_PATH) else None
         )
 
         if images:

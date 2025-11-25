@@ -15,10 +15,14 @@ class QAChain:
             base_url="http://localhost:11434"
         )
 
-        self.system_prompt = (
-            "You are a helpful assistant that answers strictly based on the provided context. "
-            "If the answer is not in the context, say you don't know. Answer in Korean."
-        )
+        self.system_prompt = """
+        당신은 RAG 기반 AI Assistant입니다.
+        반드시 제공된 컨텍스트 내용에 기반하여 답변해야 합니다.
+
+        - 컨텍스트에 없는 정보라면 추측하거나 생성하지 말고,
+          "해당 정보는 제공된 문서에 없습니다."라고 답하세요.
+        - 모든 답변은 한국어로 작성하십시오.
+        """
 
     def _pack_context(self, contexts: List[Any] | None, max_chars: int = 12000) -> str:
         if not contexts:

@@ -356,9 +356,16 @@ if menu_option == "약전 검색":
                         pdf_pages = defaultdict(set)
 
                         for doc in source_docs:
-                            meta = getattr(doc, "metadata", {}) or {}
-                            source_path = meta.get("source", "알 수 없는 경로")
-                            page = meta.get("page", None)
+                            # doc가 dict인 경우와 객체인 경우 모두 처리
+                            if isinstance(doc, dict):
+                                meta = doc.get("metadata", {})
+                                source_path = meta.get("source_file") or meta.get("source", "알 수 없는 경로")
+                                page = meta.get("page", None)
+                            else:
+                                meta = getattr(doc, "metadata", {}) or {}
+                                source_path = meta.get("source_file") or meta.get("source", "알 수 없는 경로")
+                                page = meta.get("page", None)
+
                             if page is not None:
                                 pdf_pages[source_path].add(page)
                             else:
@@ -366,88 +373,102 @@ if menu_option == "약전 검색":
 
                         lines = []
                         for src, pages in pdf_pages.items():
-                            filename = os.path.basename(src)
-                            if pages:
-                                page_list = ", ".join(str(p) for p in sorted(pages))
-                                lines.append(
-                                    f"<b>{filename}</b> (page: {page_list})"
-                                    f"<div class='source-path'>원본 경로: {src}</div>"
-                                )
-                            else:
-                                lines.append(
-                                    f"<b>{filename}</b>"
-                                    f"<div class='source-path'>원본 경로: {src}</div>"
-                                )
+                            if src and src != "알 수 없는 경로":
+                                filename = os.path.basename(src)
+                                if pages:
+                                    page_list = ", ".join(str(p) for p in sorted(pages))
+                                    lines.append(
+                                        f"<b>{filename}</b> (page: {page_list})"
+                                        f"<div class='source-path'>원본 경로: {src}</div>"
+                                    )
+                                else:
+                                    lines.append(
+                                        f"<b>{filename}</b>"
+                                        f"<div class='source-path'>원본 경로: {src}</div>"
+                                    )
                         source_html = "<br>".join(lines)
 
-                    # ---- 화면 출력 (컬럼 레이아웃) ----
-                    # 왼쪽: 답변 및 요약, 오른쪽: 출처 및 인용
-                    col_answer, col_source = st.columns([2, 1])
+                    # ---- 화면 출력 ----
+                    # 답변 먼저 표시
+                    st.markdown(
+                        "<div class='answer-section'>"
+                        "<div class='section-title'>[AI 답변]</div>"
+                        f"{answer.replace(chr(10), '<br>')}"
+                        "</div>",
+                        unsafe_allow_html=True,
+                    )
 
-                    with col_answer:
-                        st.markdown(
-                            "<div class='answer-section'>"
-                            "<div class='section-title'>[AI 답변]</div>"
-                            f"{answer.replace(chr(10), '<br>')}"
-                            "</div>",
-                            unsafe_allow_html=True,
-                        )
+                    st.markdown(
+                        "<div class='answer-section'>"
+                        "<div class='section-title'>[결과 요약]</div>"
+                        f"{(summary_text or '').replace(chr(10), '<br>')}"
+                        "</div>",
+                        unsafe_allow_html=True,
+                    )
 
-                        st.markdown(
-                            "<div class='answer-section'>"
-                            "<div class='section-title'>[결과 요약]</div>"
-                            f"{(summary_text or '').replace(chr(10), '<br>')}"
-                            "</div>",
-                            unsafe_allow_html=True,
-                        )
+                    # 📄 출처 및 PDF 캡처 (클릭형 expander)
+                    st.markdown("---")
+                    st.markdown("### 📄 출처 및 인용")
 
-                    with col_source:
-                        st.markdown("### 📄 출처 및 인용")
-                        if source_html:
-                            st.markdown(
-                                "<div class='answer-section' style='background-color: #fff; max-height: 600px; overflow-y: auto;'>"
-                                "<div class='section-title'>[출처 문서]</div>"
-                                f"{source_html}"
-                                "</div>",
-                                unsafe_allow_html=True,
-                            )
+                    if source_docs:
+                        # 출처별로 그룹화
+                        from collections import defaultdict
+                        source_groups = defaultdict(list)
 
-                            # 출처 문서 페이지 미리보기 (있다면)
-                            if source_docs:
-                                with st.expander("📖 문서 내용 미리보기", expanded=False):
-                                    for i, doc in enumerate(source_docs[:3], 1):
-                                        st.markdown(f"**문서 {i}**")
-                                        st.caption(doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content)
-                                        st.markdown("---")
+                        for doc in source_docs:
+                            # doc가 dict인 경우와 객체인 경우 모두 처리
+                            if isinstance(doc, dict):
+                                meta = doc.get("metadata", {})
+                                source_path = meta.get("source_file") or meta.get("source", None)
+                                page = meta.get("page", None)
+                            else:
+                                meta = getattr(doc, "metadata", {}) or {}
+                                source_path = meta.get("source_file") or meta.get("source", None)
+                                page = meta.get("page", None)
 
-                                # 📸 PDF 페이지 캡처 이미지 표시
-                                with st.expander("📸 PDF 페이지 캡처", expanded=True):
+                            if source_path and page is not None:
+                                source_groups[source_path].append(page)
+
+                        # 각 출처별로 expander 생성
+                        for source_path, pages in source_groups.items():
+                            filename = os.path.basename(source_path)
+                            unique_pages = sorted(set(pages))
+                            page_list_str = ", ".join(str(p + 1) for p in unique_pages)
+
+                            # 📄 출처 클릭하면 PDF 캡처본 표시
+                            with st.expander(f"📄 {filename} (페이지: {page_list_str})", expanded=False):
+                                st.caption(f"원본 경로: {source_path}")
+                                st.markdown("---")
+
+                                # 각 페이지의 PDF 이미지 표시
+                                for page in unique_pages[:3]:  # 최대 3페이지까지
                                     try:
-                                        for i, doc in enumerate(source_docs[:3], 1):
-                                            meta = getattr(doc, "metadata", {}) or {}
-                                            source_path = meta.get("source", None)
-                                            page = meta.get("page", None)
+                                        st.markdown(f"**📸 페이지 {page + 1}**")
+                                        page_image = pdf_page_to_image(source_path, page, dpi=150)
 
-                                            if source_path and page is not None:
-                                                st.markdown(f"**📄 {os.path.basename(source_path)} - 페이지 {page + 1}**")
+                                        if page_image:
+                                            st.image(page_image, use_container_width=True, caption=f"페이지 {page + 1}")
+                                        else:
+                                            st.warning(f"페이지 {page + 1}: PDF 이미지 변환 실패")
+                                    except Exception as img_error:
+                                        st.error(f"페이지 {page + 1} 변환 오류: {str(img_error)}")
 
-                                                try:
-                                                    # PDF 페이지를 이미지로 변환
-                                                    page_image = pdf_page_to_image(source_path, page, dpi=150)
+                                    st.markdown("---")
+                    else:
+                        st.info("출처 정보가 없습니다.")
 
-                                                    if page_image:
-                                                        st.image(page_image, use_container_width=True, caption=f"페이지 {page + 1}")
-                                                    else:
-                                                        st.info(f"페이지 {page + 1}: PDF 이미지 변환을 사용할 수 없습니다. (poppler 미설치)")
-                                                except Exception as img_error:
-                                                    st.info(f"📄 페이지 {page + 1}\n\nPDF 이미지 캡처 기능을 사용하려면 poppler를 설치해주세요.\n```\nconda install -c conda-forge poppler\n```")
-                                                    break  # 첫 번째 에러 후 중단
-
-                                                st.markdown("---")
-                                    except Exception as e:
-                                        st.info("💡 PDF 페이지 캡처 기능은 poppler 설치 후 사용 가능합니다.\n\n설치 방법:\n```\nconda install -c conda-forge poppler\n```")
-                        else:
-                            st.info("출처 정보가 없습니다.")
+                    # 문서 내용 미리보기
+                    if source_docs:
+                        with st.expander("📖 문서 내용 미리보기", expanded=False):
+                            for i, doc in enumerate(source_docs[:3], 1):
+                                st.markdown(f"**문서 {i}**")
+                                # doc가 dict인 경우와 객체인 경우 모두 처리
+                                if isinstance(doc, dict):
+                                    content = doc.get("content", "")
+                                else:
+                                    content = getattr(doc, "page_content", "")
+                                st.caption(content[:200] + "..." if len(content) > 200 else content)
+                                st.markdown("---")
 
                 except Exception as e:
                     st.error(f"질문 처리 중 오류: {e}")
