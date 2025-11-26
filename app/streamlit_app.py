@@ -10,143 +10,265 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 모던 CSS 스타일
+# 이미지 디자인에 영감을 받은 깔끔한 스타일
 st.markdown(
     """
     <style>
-    /* 전체 배경 */
+    /* 전체 배경 - 밝고 깨끗한 흰색 */
     .main {
-        background: linear-gradient(135deg, #f5f7fa 0%, #e3e8f0 100%);
+        background: #ffffff !important;
+        padding: 2rem;
     }
 
-    /* 헤더 */
-    h1, h2, h3 {
-        color: #1e3a8a;
+    .stApp {
+        background: #ffffff !important;
+    }
+
+    [data-testid="stAppViewContainer"] {
+        background: #ffffff !important;
+    }
+
+    [data-testid="stHeader"] {
+        background: #ffffff !important;
+    }
+
+    /* 헤더 영역 */
+    .main-header {
+        text-align: center;
+        padding: 3rem 2rem 2rem 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .main-header h1 {
+        font-size: 2rem;
         font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
     }
 
-    /* 사이드바 */
+    .main-header p {
+        font-size: 1.1rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+    }
+
+    /* 사이드바 - 밝은 배경 */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1e3a8a 0%, #3b82f6 100%);
+        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%) !important;
+        border-right: 1px solid #e9ecef;
     }
 
-    section[data-testid="stSidebar"] * {
-        color: white !important;
+    section[data-testid="stSidebar"] .stButton button {
+        width: 100%;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
     }
 
-    /* 질문 입력 영역 */
+    section[data-testid="stSidebar"] > div {
+        background: transparent !important;
+    }
+
+    /* 질문 입력 영역 - 중앙 정렬 & 깔끔한 디자인 */
+    .question-section {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin: 2rem auto;
+        max-width: 900px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e9ecef;
+    }
+
     .question-title {
         text-align: center;
-        font-size: 20px;
+        font-size: 1.5rem;
         font-weight: 700;
-        margin-bottom: 12px;
-        color: #1e3a8a;
+        margin-bottom: 1.5rem;
+        color: #2c3e50;
     }
 
     div.stTextArea textarea {
-        border-radius: 12px !important;
-        border: 2px solid #3b82f6 !important;
+        border-radius: 16px !important;
+        border: 2px solid #e0e0e0 !important;
+        background: #ffffff !important;
+        color: #2c3e50 !important;
         font-size: 16px !important;
-        padding: 16px !important;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 20px !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         transition: all 0.3s ease;
     }
 
     div.stTextArea textarea:focus {
-        border-color: #1e3a8a !important;
-        box-shadow: 0 6px 12px rgba(59,130,246,0.3);
+        border-color: #667eea !important;
+        background: #ffffff !important;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 4px 16px rgba(0,0,0,0.1);
     }
 
-    /* 답변 섹션 */
+    div.stTextArea textarea::placeholder {
+        color: #adb5bd;
+    }
+
+    /* 답변 섹션 - 카드형 디자인 */
     .answer-section {
         background: white;
-        border: none;
-        border-left: 4px solid #3b82f6;
-        border-radius: 12px;
-        padding: 20px;
+        border: 1px solid #e9ecef;
+        border-radius: 16px;
+        padding: 2rem;
         font-size: 15px;
         line-height: 1.8;
-        margin-bottom: 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     }
 
     .section-title {
-        color: #1e3a8a;
+        color: #2c3e50;
         font-weight: 700;
-        font-size: 16px;
-        margin-bottom: 12px;
+        font-size: 18px;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
     }
 
     .source-path {
         font-size: 12px;
-        color: #64748b;
+        color: #6c757d;
         margin-top: 4px;
     }
 
-    /* 버튼 */
+    /* 버튼 - 밝고 예쁜 스타일 */
     .stButton button {
-        border-radius: 10px;
+        border-radius: 12px;
         font-weight: 600;
-        padding: 0.6rem 1.5rem;
+        padding: 0.75rem 2rem;
         transition: all 0.3s ease;
         border: none;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
     .stButton button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .stButton button[kind="secondary"] {
+        background: white !important;
+        color: #667eea !important;
+        border: 2px solid #667eea !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .stButton button[kind="secondary"]:hover {
+        background: #667eea !important;
+        color: white !important;
+    }
+
+    /* Primary 버튼 */
+    .stButton button[kind="primary"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
     }
 
     /* 메트릭 */
     [data-testid="stMetricValue"] {
-        font-size: 24px;
+        font-size: 28px;
         font-weight: 700;
-        color: #1e3a8a;
+        color: #667eea;
     }
 
     /* 라디오 버튼 */
     .stRadio > label {
         font-weight: 600;
-        color: #1e3a8a;
+        color: #2c3e50;
     }
 
-    /* 익스팬더 */
+    /* 익스팬더 - 둥근 모서리 */
     .streamlit-expanderHeader {
-        background-color: #f1f5f9;
-        border-radius: 8px;
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
         font-weight: 600;
+        color: #2c3e50;
     }
 
-    /* 성공/에러 메시지 */
+    /* 성공/에러 메시지 - 둥근 디자인 */
     .stSuccess {
-        background-color: #d1fae5;
-        color: #065f46;
-        border-radius: 8px;
+        background-color: #d4edda;
+        color: #155724;
+        border-radius: 12px;
+        border: none;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
     }
 
     .stError {
-        background-color: #fee2e2;
-        color: #991b1b;
-        border-radius: 8px;
+        background-color: #f8d7da;
+        color: #721c24;
+        border-radius: 12px;
+        border: none;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(244, 67, 54, 0.2);
     }
 
     .stInfo {
-        background-color: #dbeafe;
-        color: #1e40af;
-        border-radius: 8px;
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border-radius: 12px;
+        border: none;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
     }
 
     /* 구분선 */
     hr {
         margin: 2rem 0;
         border: none;
-        border-top: 2px solid #e2e8f0;
+        border-top: 1px solid #e9ecef;
     }
 
     /* 컬럼 간격 */
     [data-testid="column"] {
-        padding: 0 12px;
+        padding: 0 0.75rem;
+    }
+
+    /* 입력 필드 */
+    input {
+        background: #f8f9fa !important;
+        color: #2c3e50 !important;
+        border: 2px solid #e9ecef !important;
+        border-radius: 12px !important;
+        padding: 0.75rem !important;
+        transition: all 0.3s ease;
+    }
+
+    input:focus {
+        border-color: #667eea !important;
+        background: #ffffff !important;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+    }
+
+    /* 헤더 타이틀 스타일 */
+    h1, h2, h3 {
+        color: #2c3e50;
+        font-weight: 700;
+    }
+
+    /* 전체 앱 배경 강제 밝게 */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
+        background-color: #ffffff !important;
+    }
+
+    /* 메인 블록 배경 */
+    .block-container {
+        background-color: #ffffff !important;
+        padding-top: 2rem !important;
+    }
+
+    /* 모든 섹션 배경 */
+    section {
+        background-color: transparent !important;
     }
     </style>
     """,
@@ -169,18 +291,32 @@ if "index_loaded" not in st.session_state:
 # -----------------------------
 # 사이드바: 로고 및 타이틀
 # -----------------------------
-st.sidebar.title("🏥 AI 약전")
-st.sidebar.markdown("대한약전 AI 검색 및 분석 시스템")
+st.sidebar.markdown(
+    """
+    <div style="text-align: center; padding: 1.5rem 0;">
+        <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">🏥 AI 약전</h1>
+        <p style="font-size: 0.9rem; color: #6c757d;">대한약전 AI 검색 시스템</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 st.sidebar.markdown("---")
 
 # 사용자 정보 (로그인 기능은 추후 구현)
-st.sidebar.markdown("👤 **사용자**: aid003 홍길동")
-st.sidebar.markdown("---")
+st.sidebar.markdown(
+    """
+    <div style="padding: 0.75rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+        <p style="margin: 0; font-size: 0.9rem;"><b>👤 사용자</b></p>
+        <p style="margin: 0; font-size: 0.85rem; color: #6c757d;">aid003 홍길동</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 # -----------------------------
 # 사이드바: 주요 메뉴
 # -----------------------------
-st.sidebar.subheader("📋 메뉴")
+st.sidebar.markdown("### 📋 메뉴")
 
 # 메뉴 선택 (라디오 버튼으로 변경)
 if "menu_selection" not in st.session_state:
@@ -200,10 +336,10 @@ st.sidebar.markdown("---")
 # -----------------------------
 # 사이드바: 인덱스 관리
 # -----------------------------
-st.sidebar.subheader("⚙️ 인덱스 관리")
+st.sidebar.markdown("### ⚙️ 인덱스 관리")
 
 # 0-1. 기존 인덱스 로드 버튼
-if st.sidebar.button("🔄 저장된 벡터 인덱스 로드", use_container_width=True, type="secondary"):
+if st.sidebar.button("🔄 벡터 인덱스 로드", use_container_width=True, type="secondary"):
     try:
         rag.load_existing_index()
         st.session_state["index_loaded"] = True
@@ -251,18 +387,28 @@ with st.sidebar.expander("📂 PDF 업로드", expanded=False):
                 st.error(f"PDF 업로드/임베딩 중 오류: {e}")
 
 # -----------------------------
-# 메인 타이틀 (메뉴에 따라 동적 변경)
+# 메인 헤더 (이미지 디자인 스타일)
 # -----------------------------
 if menu_option == "약전 검색":
-    st.title("🔍 AI 대한약전 검색")
+    st.markdown(
+        """
+        <div class="main-header">
+            <h1>🏥 방대한 약전 자료를 친절하게 이해하세요</h1>
+            <p>AI 대한약전 검색 시스템으로 빠르고 정확한 정보를 찾아보세요</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 elif menu_option == "요약 및 비교":
-    st.title("📑 약전 비교 및 요약")
-elif menu_option == "시험결과분석":
-    st.title("🧪 시험결과 분석")
-elif menu_option == "신규약전설정":
-    st.title("📝 신규약전 설정")
-elif menu_option == "외국약전법역":
-    st.title("🌏 외국약전 법역")
+    st.markdown(
+        """
+        <div class="main-header">
+            <h1>📑 약전 비교 및 요약</h1>
+            <p>국가별, 개정 전후, 자유 텍스트 비교 분석</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # 아직 인덱스가 전혀 없으면 멈춤
 if (not st.session_state["index_loaded"]) and (rag.vector_store.vectorstore is None):
@@ -284,33 +430,43 @@ if menu_option == "약전 검색":
     with col1:
         try:
             total_chunks = len(db.index_to_docstore_id)
-            st.metric("총 벡터(청크) 수", total_chunks)
+            st.metric("📊 총 벡터(청크) 수", f"{total_chunks:,}")
         except Exception:
-            st.write("총 벡터 수를 가져올 수 없습니다 (FAISS 구조 변경?).")
+            st.metric("📊 총 벡터(청크) 수", "N/A")
 
     with col2:
-        st.write("인덱스 저장 경로:", rag.vector_store.store_path)
+        st.metric("💾 인덱스 상태", "로드 완료 ✓")
 
-    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True)
 
 # =============================
 # 1) 🔍 약전 검색 메뉴
 # =============================
 if menu_option == "약전 검색":
+    # 질문 입력 영역을 카드 형태로 감싸기
     st.markdown(
-        '<div class="question-title">AI 대한약전 무엇이든 물어봐 주세요?</div>',
+        """
+        <div class="question-section">
+            <div class="question-title">💬 AI 대한약전 무엇이든 물어봐 주세요</div>
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
     question = st.text_area(
         label="질문 입력",
         label_visibility="collapsed",
-        height=70,
-        placeholder="여기에 질문을 입력하세요.",
+        height=100,
+        placeholder="소스를 검색하거나 입력하세요 (예: 아스피린의 성상과 특성은?)",
         key="question_input",
     )
 
-    if st.button("질문 실행", type="secondary", key="run_search"):
+    # 버튼을 중앙에 배치
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        search_clicked = st.button("🔍 질문 실행", type="primary", key="run_search", use_container_width=True)
+
+    if search_clicked:
         if not question.strip():
             st.warning("질문을 입력해주세요.")
         else:
@@ -473,55 +629,6 @@ if menu_option == "약전 검색":
                 except Exception as e:
                     st.error(f"질문 처리 중 오류: {e}")
 
-    # 청크 미리보기
-    with st.expander("🔎 인덱스 안에 들어있는 청크 미리보기", expanded=False):
-        mode = st.radio(
-            "보기 모드 선택",
-            ["검색으로 보기", "그냥 앞쪽 N개 보기"],
-            horizontal=True,
-            key="preview_mode",
-        )
-
-        if mode == "검색으로 보기":
-            query = st.text_input("검색 쿼리", value="test", key="preview_query")
-            k = st.slider("가져올 청크 개수 (k)", 1, 20, 5, key="preview_k")
-
-            if st.button("🔍 검색 실행", type="secondary", key="preview_search"):
-                try:
-                    docs = rag.vector_store.search(query, k=k)
-
-                    if not docs:
-                        st.warning("검색 결과가 없습니다.")
-                    else:
-                        for i, d in enumerate(docs, start=1):
-                            st.markdown(f"#### 결과 {i}")
-                            meta = d.metadata or {}
-                            st.write(f"- page: {meta.get('page', '?')}")
-                            st.write(f"- source: {meta.get('source', 'N/A')}")
-                            st.code(d.page_content, language="markdown")
-                except Exception as e:
-                    st.error(f"검색 중 오류: {e}")
-
-        else:
-            n = st.slider("앞에서부터 볼 청크 개수", 1, 30, 5, key="preview_n")
-
-            if st.button("📄 청크 목록 보기", type="secondary", key="preview_first_n"):
-                try:
-                    store = db.docstore._dict
-                    items = list(store.items())[:n]
-
-                    if not items:
-                        st.warning("docstore 안에 데이터가 없습니다.")
-                    else:
-                        for i, (key, doc) in enumerate(items, start=1):
-                            st.markdown(f"#### 청크 {i} (key={key})")
-                            meta = doc.metadata or {}
-                            st.write(f"- page: {meta.get('page', '?')}")
-                            st.write(f"- source: {meta.get('source', 'N/A')}")
-                            st.code(doc.page_content, language="markdown")
-                except Exception as e:
-                    st.error(f"청크 조회 중 오류: {e}")
-
 # =============================
 # 2) 📑 비교 및 요약 메뉴
 # =============================
@@ -530,7 +637,7 @@ elif menu_option == "요약 및 비교":
     # 비교 방식 선택
     compare_type = st.radio(
         "비교 방식 선택",
-        ["국가별 약전 비교", "개정 전/후 비교", "자유 텍스트 비교"],
+        ["국가별 약전 비교", "개정 전/후 비교"],
         horizontal=True,
         key="compare_type_radio"
     )
@@ -573,11 +680,7 @@ elif menu_option == "요약 및 비교":
                 key="country2"
             )
 
-        # 템플릿 예시 표시
-        st.info(
-            f"💡 **템플릿 예시**: 약전 12개정의 {medicine_name or '아스피린'}을 "
-            f"{compare_method} 방식으로 일본 약전과 비교해 줘?"
-        )
+
 
         if st.button("🔍 비교 실행", type="primary", key="run_country_compare"):
             if not medicine_name.strip():
@@ -663,14 +766,16 @@ elif menu_option == "요약 및 비교":
             else:
                 with st.spinner("변경대비표에서 검색 중..."):
                     try:
-                        # 변경대비표 PDF에서 검색
+                        # 1) 변경대비표 PDF에서 상세 정보 검색 (더 구체적인 프롬프트)
                         prompt = (
-                            f"대한민국약전 일부개정고시 변경대비표에서 '{item_name}'에 대한 변경사항을 찾아서 다음을 설명해줘:\n\n"
-                            "1. 개정 전 내용\n"
-                            "2. 개정 후 내용\n"
-                            "3. 주요 변경사항 요약\n"
-                            "4. 변경 사유 (있는 경우)\n\n"
-                            "변경대비표 형식으로 정리해서 보여줘."
+                            f"대한민국약전 일부개정고시 변경대비표에서 '{item_name}'에 대한 변경사항을 찾아서 다음을 정확히 구분해서 답변해줘:\n\n"
+                            "=== 제품명 ===\n"
+                            "품목명을 정확히 알려줘\n\n"
+                            "=== 현행 (개정 전) ===\n"
+                            "현재 약전에 기재된 내용을 모두 알려줘\n\n"
+                            "=== 개정안 (개정 후) ===\n"
+                            "새로 개정된 내용을 모두 알려줘\n\n"
+                            "반드시 위 형식으로 구분해서 답변해줘."
                         )
 
                         result = rag.query(prompt)
@@ -682,128 +787,230 @@ elif menu_option == "요약 및 비교":
                             answer = str(result)
                             source_docs = None
 
-                        st.markdown("### 📊 개정 변경사항")
+                        # 2) 변경사항 분석 (삭제, 수정, 추가 항목)
+                        analysis_prompt = (
+                            f"다음 개정 전/후 비교 내용을 분석해서 다음 형식으로 정리해줘:\n\n"
+                            f"{answer}\n\n"
+                            "=== 변경사항 분석 ===\n"
+                            "1. 삭제된 내용: (있으면 나열, 없으면 '없음')\n"
+                            "2. 수정된 내용: (있으면 나열, 없으면 '없음')\n"
+                            "3. 추가된 내용: (있으면 나열, 없으면 '없음')\n"
+                            "4. 요약: 3줄 이내로 핵심 변경사항 요약\n\n"
+                            "반드시 위 형식으로 답변해줘."
+                        )
 
-                        col_answer, col_source = st.columns([2, 1])
+                        analysis_result = rag.query(analysis_prompt)
 
-                        with col_answer:
-                            st.markdown(
-                                "<div class='answer-section'>"
-                                "<div class='section-title'>[변경대비표 검색 결과]</div>"
-                                f"<b>검색어</b>: {item_name}<br><br>"
-                                f"{answer.replace(chr(10), '<br>')}"
-                                "</div>",
-                                unsafe_allow_html=True,
-                            )
-
-                        with col_source:
-                            st.markdown("### 📄 출처")
-                            if source_docs:
-                                from collections import defaultdict
-                                pdf_pages = defaultdict(set)
-
-                                for doc in source_docs:
-                                    meta = getattr(doc, "metadata", {}) or {}
-                                    source_path = meta.get("source", "알 수 없음")
-                                    page = meta.get("page", None)
-                                    if page is not None:
-                                        pdf_pages[source_path].add(page)
-                                    else:
-                                        _ = pdf_pages[source_path]
-
-                                for src, pages in pdf_pages.items():
-                                    filename = os.path.basename(src)
-                                    if pages:
-                                        page_list = ", ".join(str(p+1) for p in sorted(pages))
-                                        st.info(f"📖 **{filename}**\n\n페이지: {page_list}")
-                                    else:
-                                        st.info(f"📖 **{filename}**")
-
-                                # 문서 내용 미리보기
-                                with st.expander("📋 원문 미리보기"):
-                                    for i, doc in enumerate(source_docs[:3], 1):
-                                        st.markdown(f"**문서 {i}**")
-                                        preview = doc.page_content[:400] + "..." if len(doc.page_content) > 400 else doc.page_content
-                                        st.text(preview)
-                                        if i < len(source_docs[:3]):
-                                            st.markdown("---")
-                            else:
-                                st.warning("출처 정보가 없습니다")
-
-                    except Exception as e:
-                        st.error(f"검색 중 오류: {e}")
-
-    # =============================
-    # 2-3) 자유 텍스트 비교
-    # =============================
-    else:
-        st.subheader("📝 자유 텍스트 비교 및 요약")
-
-        mode = st.radio(
-            "모드 선택",
-            ["두 내용 비교", "한 내용 요약"],
-            horizontal=True,
-            key="free_compare_mode",
-        )
-
-        text1 = st.text_area(
-            "내용 A",
-            height=150,
-            placeholder="비교하거나 요약할 첫 번째 내용을 입력하세요.",
-            key="free_text1",
-        )
-
-        text2 = ""
-        if mode == "두 내용 비교":
-            text2 = st.text_area(
-                "내용 B",
-                height=150,
-                placeholder="비교할 두 번째 내용을 입력하세요.",
-                key="free_text2",
-            )
-
-        if st.button("실행", type="primary", key="run_free_compare"):
-            if not text1.strip():
-                st.warning("내용 A를 입력해주세요.")
-            elif mode == "두 내용 비교" and not text2.strip():
-                st.warning("내용 B를 입력해주세요.")
-            else:
-                with st.spinner("비교/요약 중..."):
-                    try:
-                        if mode == "두 내용 비교":
-                            prompt = (
-                                "다음 두 내용을 한국어로 비교·분석해줘.\n\n"
-                                "[내용 A]\n"
-                                f"{text1}\n\n"
-                                "[내용 B]\n"
-                                f"{text2}\n\n"
-                                "1) 공통점\n"
-                                "2) 차이점\n"
-                                "3) 중요한 포인트를 정리해줘."
-                            )
-                        else:  # 한 내용 요약
-                            prompt = (
-                                "다음 내용을 한국어로 3~5줄 정도로 요약해줘.\n\n"
-                                f"{text1}"
-                            )
-
-                        result = rag.query(prompt)
-
-                        if isinstance(result, dict):
-                            compare_answer = result.get("answer") or result.get("result") or str(result)
+                        if isinstance(analysis_result, dict):
+                            analysis = analysis_result.get("answer") or analysis_result.get("result") or ""
                         else:
-                            compare_answer = str(result)
+                            analysis = str(analysis_result)
 
+                        # 3) 제품명 추출 (AI에게 직접 물어보기)
+                        product_name = item_name  # 기본값
+                        try:
+                            product_name_prompt = (
+                                f"다음 내용에서 제품명 또는 품목명만 추출해서 알려줘. 다른 설명 없이 제품명만 답변해:\n\n{answer[:500]}"
+                            )
+                            product_name_result = rag.query(product_name_prompt)
+
+                            if isinstance(product_name_result, dict):
+                                extracted_name = product_name_result.get("answer") or product_name_result.get("result") or ""
+                            else:
+                                extracted_name = str(product_name_result)
+
+                            # 추출된 제품명이 너무 길지 않으면 사용
+                            if extracted_name and len(extracted_name.strip()) < 100:
+                                product_name = extracted_name.strip()
+                        except:
+                            # 실패하면 answer에서 직접 파싱 시도
+                            if "=== 제품명 ===" in answer:
+                                try:
+                                    extracted = answer.split("=== 제품명 ===")[1].split("===")[0].strip()
+                                    if extracted and len(extracted) < 100:
+                                        product_name = extracted
+                                except:
+                                    pass
+                            elif "제품명:" in answer:
+                                try:
+                                    extracted = answer.split("제품명:")[1].split("\n")[0].strip()
+                                    if extracted and len(extracted) < 100:
+                                        product_name = extracted
+                                except:
+                                    pass
+                            elif "품목명:" in answer:
+                                try:
+                                    extracted = answer.split("품목명:")[1].split("\n")[0].strip()
+                                    if extracted and len(extracted) < 100:
+                                        product_name = extracted
+                                except:
+                                    pass
+
+                        # 결과 표시
+                        st.markdown("### 📊 개정 전/후 비교표")
+
+                        # 제품명 표시
+                        st.markdown(f"**제품명**: {product_name}")
+                        st.markdown("---")
+
+                        # 표 형식으로 개정 전/후 비교 (HTML 테이블 사용)
+                        st.markdown(
+                            """
+                            <style>
+                            .comparison-table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin: 1rem 0;
+                                background: white;
+                                border-radius: 8px;
+                                overflow: hidden;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                            }
+                            .comparison-table th {
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                color: white;
+                                padding: 1rem;
+                                text-align: center;
+                                font-weight: 600;
+                                font-size: 16px;
+                            }
+                            .comparison-table td {
+                                padding: 1.5rem;
+                                border: 1px solid #e9ecef;
+                                vertical-align: top;
+                                line-height: 1.8;
+                            }
+                            .comparison-table .label-cell {
+                                background: #f8f9fa;
+                                font-weight: 600;
+                                width: 150px;
+                                text-align: center;
+                            }
+                            .comparison-table .content-cell {
+                                background: white;
+                            }
+                            </style>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                        # 개정 전/후 내용을 파싱
+                        before_content = "현행 내용을 찾는 중..."
+                        after_content = "개정안 내용을 찾는 중..."
+
+                        # answer에서 개정 전/후 분리 (더 정확하게)
+                        try:
+                            if "=== 현행" in answer and "=== 개정안" in answer:
+                                parts = answer.split("=== 개정안")
+                                before_part = parts[0].split("=== 현행")[-1].strip()
+                                after_part = parts[1].split("===")[0].strip() if "===" in parts[1] else parts[1].strip()
+
+                                before_content = before_part.replace("\n", "<br>")
+                                after_content = after_part.replace("\n", "<br>")
+                            elif "현행" in answer and "개정안" in answer:
+                                parts = answer.split("개정안")
+                                before_part = parts[0].split("현행")[-1].strip()
+                                after_part = parts[1].strip()
+
+                                before_content = before_part.replace("\n", "<br>")
+                                after_content = after_part.replace("\n", "<br>")
+                        except Exception as e:
+                            st.warning(f"내용 파싱 중 오류: {e}")
+
+                        # 비교표 출력
+                        comparison_html = f"""
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>제품명</th>
+                                    <th colspan="2">{product_name}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="label-cell">현행<br>(개정 전)</td>
+                                    <td class="content-cell" colspan="2">{before_content}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell">개정안<br>(개정 후)</td>
+                                    <td class="content-cell" colspan="2">{after_content}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        """
+                        st.markdown(comparison_html, unsafe_allow_html=True)
+
+                        # 변경사항 분석
+                        st.markdown("---")
                         st.markdown(
                             "<div class='answer-section'>"
-                            "<div class='section-title'>[비교/요약 결과]</div>"
-                            f"{compare_answer.replace(chr(10), '<br>')}"
+                            "<div class='section-title'>🔍 변경사항 분석</div>"
+                            f"{analysis.replace(chr(10), '<br>')}"
                             "</div>",
                             unsafe_allow_html=True,
                         )
 
+                        # 📄 출처 및 PDF 이미지 (약전 검색과 동일한 방식)
+                        st.markdown("---")
+                        st.markdown("### 📄 출처 및 인용")
+
+                        if source_docs:
+                            # 출처별로 그룹화
+                            from collections import defaultdict
+                            source_groups = defaultdict(list)
+
+                            for doc in source_docs:
+                                # doc가 dict인 경우와 객체인 경우 모두 처리
+                                if isinstance(doc, dict):
+                                    meta = doc.get("metadata", {})
+                                    source_path = meta.get("source_file") or meta.get("source", None)
+                                    page = meta.get("page", None)
+                                else:
+                                    meta = getattr(doc, "metadata", {}) or {}
+                                    source_path = meta.get("source_file") or meta.get("source", None)
+                                    page = meta.get("page", None)
+
+                                if source_path and page is not None:
+                                    source_groups[source_path].append(page)
+
+                            # 각 출처별로 expander 생성
+                            for source_path, pages in source_groups.items():
+                                filename = os.path.basename(source_path)
+                                unique_pages = sorted(set(pages))
+                                page_list_str = ", ".join(str(p + 1) for p in unique_pages)
+
+                                # 📄 출처 클릭하면 PDF 캡처본 표시
+                                with st.expander(f"📄 {filename} (페이지: {page_list_str})", expanded=False):
+                                    st.caption(f"원본 경로: {source_path}")
+                                    st.markdown("---")
+
+                                    # 각 페이지의 PDF 이미지 표시
+                                    for page in unique_pages[:3]:  # 최대 3페이지까지
+                                        try:
+                                            st.markdown(f"**📸 페이지 {page + 1}**")
+                                            page_image = pdf_page_to_image(source_path, page, dpi=150)
+
+                                            if page_image:
+                                                st.image(page_image, use_container_width=True, caption=f"페이지 {page + 1}")
+                                            else:
+                                                st.warning(f"페이지 {page + 1}: PDF 이미지 변환 실패")
+                                        except Exception as img_error:
+                                            st.error(f"페이지 {page + 1} 변환 오류: {str(img_error)}")
+
+                                        st.markdown("---")
+                        else:
+                            st.info("출처 정보가 없습니다.")
+
+                        # 전체 AI 답변 (상세 내용)
+                        with st.expander("📋 전체 상세 내용 보기", expanded=False):
+                            st.markdown("**원본 답변:**")
+                            st.markdown(answer)
+                            st.markdown("---")
+                            st.markdown("**변경사항 분석:**")
+                            st.markdown(analysis)
+
                     except Exception as e:
-                        st.error(f"비교/요약 처리 중 오류: {e}")
+                        st.error(f"검색 중 오류: {e}")
 
 # =============================
 # 3) 기타 메뉴들 (준비 중)
