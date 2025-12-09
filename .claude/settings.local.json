@@ -3,7 +3,8 @@
     "allow": [
       "Bash(timeout /t 3)",
       "Bash(nul)",
-      "Bash(ver)"
+      "Bash(ver)",
+      "Bash(streamlit run:*)"
     ],
     "deny": [],
     "ask": []

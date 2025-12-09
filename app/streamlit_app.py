@@ -193,10 +193,23 @@ st.markdown(
         color: #2c3e50;
     }
 
+    /* Spinner - 로딩 애니메이션 색상 */
+    .stSpinner > div {
+        border-top-color: #667eea !important;
+    }
+
+    div[data-testid="stSpinner"] > div {
+        border-top-color: #667eea !important;
+    }
+
+    .stSpinner {
+        color: #2c3e50 !important;
+    }
+
     /* 성공/에러 메시지 - 둥근 디자인 */
     .stSuccess {
-        background-color: #d4edda;
-        color: #155724;
+        background-color: #d4edda !important;
+        color: #155724 !important;
         border-radius: 12px;
         border: none;
         padding: 1rem;
@@ -545,19 +558,11 @@ if menu_option == "약전 검색":
                         source_html = "<br>".join(lines)
 
                     # ---- 화면 출력 ----
-                    # 답변 먼저 표시
+                    # AI 답변 (결과 요약 데이터 표시)
                     st.markdown(
                         "<div class='answer-section'>"
                         "<div class='section-title'>[AI 답변]</div>"
-                        f"{answer.replace(chr(10), '<br>')}"
-                        "</div>",
-                        unsafe_allow_html=True,
-                    )
-
-                    st.markdown(
-                        "<div class='answer-section'>"
-                        "<div class='section-title'>[결과 요약]</div>"
-                        f"{(summary_text or '').replace(chr(10), '<br>')}"
+                        f"{(summary_text or answer).replace(chr(10), '<br>')}"
                         "</div>",
                         unsafe_allow_html=True,
                     )
@@ -603,7 +608,7 @@ if menu_option == "약전 검색":
                                         page_image = pdf_page_to_image(source_path, page, dpi=150)
 
                                         if page_image:
-                                            st.image(page_image, use_container_width=True, caption=f"페이지 {page + 1}")
+                                            st.image(page_image, width=400, caption=f"페이지 {page + 1}")
                                         else:
                                             st.warning(f"페이지 {page + 1}: PDF 이미지 변환 실패")
                                     except Exception as img_error:
@@ -991,7 +996,7 @@ elif menu_option == "요약 및 비교":
                                             page_image = pdf_page_to_image(source_path, page, dpi=150)
 
                                             if page_image:
-                                                st.image(page_image, use_container_width=True, caption=f"페이지 {page + 1}")
+                                                st.image(page_image, width=400, caption=f"페이지 {page + 1}")
                                             else:
                                                 st.warning(f"페이지 {page + 1}: PDF 이미지 변환 실패")
                                         except Exception as img_error:
