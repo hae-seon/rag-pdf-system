@@ -31,11 +31,15 @@ if torch.cuda.is_available():
 
 # 전역 변수로 모델 로드 (컨테이너 시작 시 한 번만 로드)
 MODEL_NAME = os.getenv("MODEL_NAME", "naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B")
+HF_TOKEN = os.getenv("HF_TOKEN")  # Hugging Face token for gated models
 print(f"\nLoading model: {MODEL_NAME}")
+if HF_TOKEN:
+    print("Using Hugging Face token for authentication")
 
 tokenizer = AutoTokenizer.from_pretrained(
     MODEL_NAME,
-    trust_remote_code=True
+    trust_remote_code=True,
+    token=HF_TOKEN  # Add token for gated repository access
 )
 print("Tokenizer loaded successfully")
 
