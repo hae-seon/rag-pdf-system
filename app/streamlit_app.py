@@ -485,22 +485,41 @@ if menu_option == "약전 검색":
         else:
             with st.spinner("생각 중..."):
                 try:
+                    # ===== 디버깅 로그 =====
+                    import traceback
+                    print("\n" + "="*50)
+                    print("🔍 [DEBUG] RAG Query 시작")
+                    print(f"질문: {question}")
+                    print("="*50)
+
                     # 1) 원본 RAG 답변
+                    print("[STEP 1] RAG query 호출 중...")
                     result = rag.query(question)
+                    print(f"[STEP 1] ✅ RAG query 완료")
+                    print(f"[STEP 1] result 타입: {type(result)}")
+                    print(f"[STEP 1] result 내용 (첫 200자): {str(result)[:200]}")
 
                     if isinstance(result, dict):
+                        print(f"[STEP 1] result keys: {result.keys()}")
                         answer = result.get("answer") or result.get("result") or str(result)
                     else:
                         answer = str(result)
 
+                    print(f"[STEP 1] answer 길이: {len(answer)} 글자")
+                    print(f"[STEP 1] answer 미리보기: {answer[:100]}...")
+
                     # 2) 요약 생성
+                    print("\n[STEP 2] 요약 생성 시작...")
                     summary_text = None
                     try:
                         summary_prompt = (
                             "다음 내용을 한국어로 3~4줄 정도로 짧게 요약해줘.\n\n"
                             f"{answer}"
                         )
+                        print("[STEP 2] 요약 query 호출 중...")
                         summary_result = rag.query(summary_prompt)
+                        print(f"[STEP 2] ✅ 요약 완료")
+                        print(f"[STEP 2] summary_result 타입: {type(summary_result)}")
 
                         if isinstance(summary_result, dict):
                             summary_text = (
@@ -510,13 +529,21 @@ if menu_option == "약전 검색":
                             )
                         else:
                             summary_text = str(summary_result)
+                        print(f"[STEP 2] summary_text 길이: {len(summary_text)} 글자")
                     except Exception as se:
+                        print(f"[STEP 2] ❌ 요약 생성 실패: {se}")
+                        traceback.print_exc()
                         summary_text = f"요약 생성 중 오류가 발생했습니다: {se}"
 
                     # 3) 출처 (PDF 이름 + 페이지)
+                    print("\n[STEP 3] 출처 정보 추출 시작...")
                     source_docs = None
                     if isinstance(result, dict):
                         source_docs = result.get("source_documents") or result.get("sources")
+                        print(f"[STEP 3] source_docs 타입: {type(source_docs)}")
+                        print(f"[STEP 3] source_docs 개수: {len(source_docs) if source_docs else 0}")
+                    else:
+                        print("[STEP 3] result가 dict가 아니므로 source_docs 추출 불가")
 
                     source_html = ""
                     if source_docs:
@@ -524,21 +551,33 @@ if menu_option == "약전 검색":
 
                         pdf_pages = defaultdict(set)
 
-                        for doc in source_docs:
+                        for idx, doc in enumerate(source_docs):
+                            print(f"\n[STEP 3] 문서 {idx+1} 처리 중...")
+                            print(f"[STEP 3]   doc 타입: {type(doc)}")
+
                             # doc가 dict인 경우와 객체인 경우 모두 처리
                             if isinstance(doc, dict):
+                                print("[STEP 3]   doc는 dict")
                                 meta = doc.get("metadata", {})
+                                print(f"[STEP 3]   metadata keys: {meta.keys() if meta else 'None'}")
                                 source_path = meta.get("source_file") or meta.get("source", "알 수 없는 경로")
                                 page = meta.get("page", None)
                             else:
+                                print("[STEP 3]   doc는 객체")
                                 meta = getattr(doc, "metadata", {}) or {}
+                                print(f"[STEP 3]   metadata: {meta}")
                                 source_path = meta.get("source_file") or meta.get("source", "알 수 없는 경로")
                                 page = meta.get("page", None)
+
+                            print(f"[STEP 3]   source_path: {source_path}")
+                            print(f"[STEP 3]   page: {page}")
 
                             if page is not None:
                                 pdf_pages[source_path].add(page)
                             else:
                                 _ = pdf_pages[source_path]
+
+                        print(f"\n[STEP 3] pdf_pages 수집 완료: {len(pdf_pages)}개 파일")
 
                         lines = []
                         for src, pages in pdf_pages.items():
@@ -558,7 +597,9 @@ if menu_option == "약전 검색":
                         source_html = "<br>".join(lines)
 
                     # ---- 화면 출력 ----
+                    print("\n[STEP 4] 화면 출력 시작...")
                     # AI 답변 (결과 요약 데이터 표시)
+                    print("[STEP 4] AI 답변 출력 중...")
                     st.markdown(
                         "<div class='answer-section'>"
                         "<div class='section-title'>[AI 답변]</div>"
@@ -566,12 +607,15 @@ if menu_option == "약전 검색":
                         "</div>",
                         unsafe_allow_html=True,
                     )
+                    print("[STEP 4] ✅ AI 답변 출력 완료")
 
                     # 📄 출처 및 PDF 캡처 (클릭형 expander)
+                    print("[STEP 4] 출처 및 인용 섹션 출력 중...")
                     st.markdown("---")
                     st.markdown("### 📄 출처 및 인용")
 
                     if source_docs:
+                        print(f"[STEP 4] source_docs 있음 ({len(source_docs)}개)")
                         # 출처별로 그룹화
                         from collections import defaultdict
                         source_groups = defaultdict(list)
