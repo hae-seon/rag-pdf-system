@@ -39,7 +39,8 @@ if HF_TOKEN:
 tokenizer = AutoTokenizer.from_pretrained(
     MODEL_NAME,
     trust_remote_code=True,
-    token=HF_TOKEN  # Add token for gated repository access
+    token=HF_TOKEN,  # Add token for gated repository access
+    use_fast=False  # Use slow tokenizer for compatibility
 )
 print("Tokenizer loaded successfully")
 
