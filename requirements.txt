@@ -4,11 +4,13 @@ langchain-community>=0.3.0
 langchain-google-genai>=0.0.6
 langchain-ollama>=0.2.0
 
-# HuggingFace Transformers (for HyperCLOVAX-SEED-Think-14B)
-transformers>=4.53.0
-torch>=2.0.0
+# HuggingFace Transformers (for HyperCLOVAX-SEED-Think-14B) - GPU Optimized
+transformers==4.36.2
+torch>=2.0.0,<2.2.0
 accelerate>=0.20.0
 timm>=0.9.0
+bitsandbytes>=0.41.0  # 4bit/8bit quantization support
+optimum>=1.12.0  # Hugging Face optimization tools
 
 # PDF Processing
 pypdf2==3.0.1
