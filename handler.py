@@ -4,7 +4,7 @@ HyperCLOVA X Model - GPU Optimized
 """
 import os
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoConfig
 import runpod
 
 # GPU 설정 확인
@@ -36,24 +36,128 @@ print(f"\nLoading model: {MODEL_NAME}")
 if HF_TOKEN:
     print("Using Hugging Face token for authentication")
 
-tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_NAME,
-    trust_remote_code=True,
-    token=HF_TOKEN,  # Add token for gated repository access
-    use_fast=False  # Use slow tokenizer for compatibility
-)
-print("Tokenizer loaded successfully")
+# ============================================================
+# 토크나이저 로딩 - 여러 방법 시도
+# ============================================================
+tokenizer = None
 
-# GPU가 사용 가능하면 GPU로, 아니면 CPU로 로드
+# 방법 1: GPT2Tokenizer 직접 사용 시도
+try:
+    print("Trying GPT2Tokenizer...")
+    from transformers import GPT2Tokenizer
+    tokenizer = GPT2Tokenizer.from_pretrained(
+        MODEL_NAME,
+        trust_remote_code=True,
+        token=HF_TOKEN
+    )
+    print("GPT2Tokenizer loaded successfully")
+except Exception as e:
+    print(f"GPT2Tokenizer failed: {e}")
+
+# 방법 2: LlamaTokenizer 시도 (일부 한국어 모델에서 사용)
+if tokenizer is None:
+    try:
+        print("Trying LlamaTokenizer...")
+        from transformers import LlamaTokenizer
+        tokenizer = LlamaTokenizer.from_pretrained(
+            MODEL_NAME,
+            trust_remote_code=True,
+            token=HF_TOKEN
+        )
+        print("LlamaTokenizer loaded successfully")
+    except Exception as e:
+        print(f"LlamaTokenizer failed: {e}")
+
+# 방법 3: PreTrainedTokenizerFast를 직접 로드하되, tokenizer.json 제외
+if tokenizer is None:
+    try:
+        print("Trying AutoTokenizer with legacy mode...")
+        from transformers import AutoTokenizer
+        tokenizer = AutoTokenizer.from_pretrained(
+            MODEL_NAME,
+            trust_remote_code=True,
+            token=HF_TOKEN,
+            use_fast=False,
+            legacy=True
+        )
+        print("AutoTokenizer (legacy) loaded successfully")
+    except Exception as e:
+        print(f"AutoTokenizer legacy failed: {e}")
+
+# 방법 4: 로컬에서 tokenizer.json 제외하고 로드
+if tokenizer is None:
+    try:
+        print("Trying to load without tokenizer.json...")
+        from huggingface_hub import snapshot_download
+        import shutil
+
+        # 모델 다운로드
+        local_dir = snapshot_download(
+            MODEL_NAME,
+            token=HF_TOKEN,
+            ignore_patterns=["tokenizer.json"]  # fast tokenizer 파일 제외
+        )
+        print(f"Model downloaded to: {local_dir}")
+
+        from transformers import AutoTokenizer
+        tokenizer = AutoTokenizer.from_pretrained(
+            local_dir,
+            trust_remote_code=True,
+            use_fast=False
+        )
+        print("Tokenizer loaded from local (without tokenizer.json)")
+    except Exception as e:
+        print(f"Local load failed: {e}")
+
+# 방법 5: 최후의 수단 - tiktoken 기반
+if tokenizer is None:
+    try:
+        print("Trying tiktoken-based tokenizer...")
+        import tiktoken
+        # GPT-4 토크나이저를 대체로 사용 (호환성 문제 있을 수 있음)
+        enc = tiktoken.get_encoding("cl100k_base")
+
+        class TiktokenWrapper:
+            def __init__(self, encoding):
+                self.encoding = encoding
+                self.eos_token_id = 100257
+                self.pad_token_id = 100257
+
+            def __call__(self, text, return_tensors=None, **kwargs):
+                tokens = self.encoding.encode(text)
+                if return_tensors == "pt":
+                    return {"input_ids": torch.tensor([tokens]), "attention_mask": torch.ones(1, len(tokens))}
+                return {"input_ids": tokens}
+
+            def decode(self, tokens, skip_special_tokens=True):
+                if isinstance(tokens, torch.Tensor):
+                    tokens = tokens.tolist()
+                return self.encoding.decode(tokens)
+
+        tokenizer = TiktokenWrapper(enc)
+        print("WARNING: Using tiktoken fallback - may have compatibility issues")
+    except Exception as e:
+        print(f"Tiktoken failed: {e}")
+
+if tokenizer is None:
+    raise RuntimeError("Failed to load tokenizer with all methods!")
+
+print("Tokenizer ready!")
+print("=" * 50)
+
+# ============================================================
+# 모델 로딩
+# ============================================================
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
     trust_remote_code=True,
-    device_map="auto",  # 자동으로 최적의 디바이스에 배치
+    token=HF_TOKEN,
+    device_map="auto",
     torch_dtype=dtype,
-    low_cpu_mem_usage=True  # 메모리 효율적 로딩
+    low_cpu_mem_usage=True
 )
 
 print(f"Model loaded successfully!")
