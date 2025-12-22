@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.claude/
+
+# Data files (large files that shouldn't be in container)
+data/
+*.pdf
+*.png
+*.jpg
+*.jpeg
+
+# Vector stores
+*.faiss
+*.index
+
+# Environment files
+.env
+.env.*
+
+# Git
+.git/
+.gitignore
+
+# Tests
+tests/
+test_*.py
+
+# Documentation
+*.md
+docs/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# App-specific (not needed for RunPod handler)
+app/
+example.py
+add_pdf_to_index.py
+run.bat

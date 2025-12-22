@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 
 from pdf_processor import PDFProcessor
 from vector_store import VectorStoreManager
-from qa_chain import QAChain  # OpenAI Chat 버전
+from qa_chain import QAChain  # 로컬 모델
+from qa_chain_runpod import QAChainRunPod  # RunPod API
 
 # Load environment variables
 load_dotenv()
@@ -32,14 +33,27 @@ class RAGSystem:
             embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
         )
 
-        self.qa_chain: QAChain | None = None
+        self.qa_chain: QAChain | QAChainRunPod | None = None
 
     def _ensure_qa_chain(self):
         if self.qa_chain is None:
-            self.qa_chain = QAChain(
-                model_name=os.getenv("LLM_MODEL", "qwen2"),
-                temperature=float(os.getenv("LLM_TEMPERATURE", 0.2)),
-            )
+            llm_type = os.getenv("LLM_TYPE", "local").lower()
+
+            if llm_type == "runpod":
+                # RunPod API 사용
+                self.qa_chain = QAChainRunPod(
+                    api_key=os.getenv("RUNPOD_API_KEY"),
+                    endpoint_id=os.getenv("RUNPOD_ENDPOINT_ID"),
+                    temperature=float(os.getenv("LLM_TEMPERATURE", 0.2)),
+                )
+                logger.info("Using RunPod API for LLM")
+            else:
+                # 로컬 모델 사용
+                self.qa_chain = QAChain(
+                    model_name=os.getenv("LLM_MODEL", "qwen2"),
+                    temperature=float(os.getenv("LLM_TEMPERATURE", 0.2)),
+                )
+                logger.info("Using local LLM model")
 
     def ingest_pdf(self, pdf_path: str) -> None:
         """Process a PDF, build/save the vector index."""
