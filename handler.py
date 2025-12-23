@@ -37,12 +37,30 @@ if torch.cuda.is_available():
 # =========================
 # 모델/토큰
 # =========================
+print("\n" + "=" * 50)
+print("ENVIRONMENT VARIABLES DEBUG")
+print("=" * 50)
+print(f"MODEL_NAME env: {os.getenv('MODEL_NAME', 'NOT SET')}")
+print(f"HF_TOKEN env: {os.getenv('HF_TOKEN', 'NOT SET')[:20] + '...' if os.getenv('HF_TOKEN') else 'NOT SET'}")
+print(f"HUGGING_FACE_HUB_TOKEN env: {os.getenv('HUGGING_FACE_HUB_TOKEN', 'NOT SET')[:20] + '...' if os.getenv('HUGGING_FACE_HUB_TOKEN') else 'NOT SET'}")
+print(f"HF_API_TOKEN env: {os.getenv('HF_API_TOKEN', 'NOT SET')[:20] + '...' if os.getenv('HF_API_TOKEN') else 'NOT SET'}")
+
+# All environment variables (for debugging)
+print("\nAll environment variables containing 'HF' or 'TOKEN':")
+for key, value in os.environ.items():
+    if 'HF' in key.upper() or 'TOKEN' in key.upper() or 'HUGGING' in key.upper():
+        safe_value = value[:20] + '...' if len(value) > 20 else value
+        print(f"  {key} = {safe_value}")
+print("=" * 50 + "\n")
+
 MODEL_NAME = os.getenv("MODEL_NAME", "naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 print(f"\nLoading model: {MODEL_NAME}")
 if HF_TOKEN:
     print("Using Hugging Face token for authentication")
+else:
+    print("WARNING: No HF_TOKEN found in environment variables!")
 
 
 # =========================
