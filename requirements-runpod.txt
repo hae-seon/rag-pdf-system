@@ -1,0 +1,20 @@
+# RunPod Serverless - Minimal Requirements
+# Handler.py imports: torch, transformers, runpod
+# Base image already includes: torch, numpy
+
+# Core Transformers (필수)
+transformers>=4.57.0
+tokenizers>=0.19.1
+
+# Model Loading & Optimization (필수)
+accelerate>=0.20.0
+safetensors
+huggingface_hub>=0.23.0
+
+# HyperCLOVA 모델 지원 (필수)
+sentencepiece
+protobuf
+
+# GPU Optimization (선택적이지만 강력 추천)
+bitsandbytes>=0.41.0
+optimum>=1.12.0
