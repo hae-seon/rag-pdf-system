@@ -18,8 +18,8 @@ class VectorStoreManager:
     def __init__(
         self,
         store_type: str = "faiss",
-        store_path: str = "./data/vectors",
-        embedding_model: str = "jhgan/ko-sroberta-multitask",
+        store_path: str = "../data/vectors/index",
+        embedding_model: str = "BAAI/bge-m3",
     ):
         self.store_type = store_type
         self.store_path = store_path
@@ -70,6 +70,7 @@ class VectorStoreManager:
 
     def load_vectorstore(self, name: str = "index") -> None:
         if self.store_type == "faiss":
+            print('test',self.store_path)
             load_path = os.path.join(self.store_path, name)
             self.vectorstore = FAISS.load_local(
                 load_path,

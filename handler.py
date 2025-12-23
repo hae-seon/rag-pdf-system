@@ -5,10 +5,13 @@ HyperCLOVA X Model - GPU Optimized (SAFE TOKENIZER)
 import os
 import torch
 import runpod
-
+import sys
 from transformers import AutoModelForCausalLM, AutoTokenizer
+sys.path.insert(0, '/workspace')
 
-
+# 환경변수 디버깅 섹션 전에 추가
+print(f"Python path: {sys.path}")
+print(f"Current working directory: {os.getcwd()}")
 # =========================
 # GPU 설정 확인
 # =========================
@@ -149,37 +152,31 @@ print("=" * 50)
 # 시스템 프롬프트
 # =========================
 SYSTEM_PROMPT = """당신은 대한약전 전문 AI 어시스턴트입니다.
-제공된 컨텍스트만을 사용하여 정확하게 답변하세요.
-컨텍스트에 없는 내용은 추측하지 마세요.
+제공된 컨텍스트를 바탕으로 상세하고 완전한 답변을 제공하세요.
 
-답변 형식:
-1. 기본 정의 (한글명, 영문명, 화학식, 기원)
-2. 주요 특징 (성상, 용해성, 물리화학 지표)
-3. 확인시험
-4. 품질·순도 시험
-5. 정량법
-6. 저장법
-7. 요약
+답변 시 반드시 다음 항목들을 포함하세요:
+1. 기본 정의 (한글명, 영문명, 화학식, 기원) - 최소 2-3문장
+2. 주요 특징 (성상, 용해성, 물리화학 지표) - 구체적으로 설명
+3. 확인시험 - 시험 방법과 결과 상세 기술
+4. 품질·순도 시험 - 기준치와 방법 명시
+5. 정량법 - 측정 방법과 허용 범위 설명
+6. 저장법 - 구체적인 보관 조건
+7. 종합 요약 - 3-4문장으로 정리
 
-규칙:
-- 컨텍스트의 정보만 사용
-- 수치와 단위를 정확히 기재
-- 정보가 없으면 "제공된 문서에 해당 정보가 없습니다" 명시"""
+각 항목을 충분히 상세하게 작성하되, 컨텍스트에 없는 내용은 추측하지 마세요."""
 
 
 def generate_answer(
     prompt: str,
     max_new_tokens: int = 1024,
-    temperature: float = 0.2,
+    temperature: float = 0.7,  # 0.2 → 0.7로 상향
     top_p: float = 0.9,
     top_k: int = 50,
-    repetition_penalty: float = 1.2,
+    repetition_penalty: float = 1.1,  # 1.2 → 1.1로 완화
 ) -> str:
     full_prompt = f"{SYSTEM_PROMPT}\n\n{prompt}"
 
     inputs = tokenizer(full_prompt, return_tensors="pt")
-
-    # ✅ device_map="auto" 환경에서 가장 안전: 모델 파라미터 device로 입력 이동
     target_device = next(model.parameters()).device
     inputs = {k: v.to(target_device) for k, v in inputs.items()}
 
@@ -187,10 +184,11 @@ def generate_answer(
 
     with torch.no_grad():
         autocast_enabled = torch.cuda.is_available() and target_device.type == "cuda"
-        with torch.cuda.amp.autocast(enabled=autocast_enabled):
+        with torch.amp.autocast('cuda', enabled=autocast_enabled):  # ✅ FutureWarning 해결
             outputs = model.generate(
                 **inputs,
                 max_new_tokens=max_new_tokens,
+                min_new_tokens=100,  # ✅ 최소 100토큰은 생성하도록 강제
                 do_sample=do_sample,
                 temperature=temperature if do_sample else None,
                 top_p=top_p if do_sample else None,
@@ -198,6 +196,7 @@ def generate_answer(
                 repetition_penalty=repetition_penalty,
                 pad_token_id=tokenizer.pad_token_id,
                 eos_token_id=tokenizer.eos_token_id,
+                no_repeat_ngram_size=3,  # ✅ 3-gram 반복 방지
                 use_cache=True,
             )
 

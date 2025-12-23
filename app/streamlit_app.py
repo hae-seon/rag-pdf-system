@@ -677,6 +677,7 @@ if menu_option == "약전 검색":
 
                 except Exception as e:
                     st.error(f"질문 처리 중 오류: {e}")
+                    st.code(traceback.format_exc())  # ✅ 전체 에러 로그(스택트레이스) 출력
 
 # =============================
 # 2) 📑 비교 및 요약 메뉴

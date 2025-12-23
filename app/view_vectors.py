@@ -7,7 +7,7 @@ load_dotenv()  # ✅ .env 파일 자동 로드
 # ✅ 경로는 main.py에서 지정한 vector_store_path 그대로
 VECTOR_PATH = "../data/vectors/index"
 
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+embeddings = OpenAIEmbeddings(model="jhgan/ko-sroberta-multitask")
 
 # 인덱스 로드
 db = FAISS.load_local(VECTOR_PATH, embeddings, allow_dangerous_deserialization=True)

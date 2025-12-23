@@ -1,17 +1,21 @@
-# Core RAG Dependencies
-langchain>=0.3.0
-langchain-community>=0.3.0
-langchain-google-genai>=0.0.6
-langchain-ollama>=0.2.0
-
-# HuggingFace Transformers (for HyperCLOVAX-SEED-Think-14B) - GPU Optimized
+# Core Transformers (통합)
 transformers>=4.57.0
 torch>=2.0.0
 accelerate>=0.20.0
-timm>=0.9.0
-bitsandbytes>=0.41.0  # 4bit/8bit quantization support
-optimum>=1.12.0  # Hugging Face optimization tools
-huggingface_hub>=0.19.0  # For snapshot_download and model management
+tokenizers>=0.19.1
+sentencepiece
+protobuf
+safetensors
+
+# Quantization & Optimization
+bitsandbytes>=0.41.0
+optimum>=1.12.0
+huggingface_hub>=0.23.0
+
+# RAG Dependencies
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-google-genai>=0.0.6
 
 # PDF Processing
 pypdf2==3.0.1
@@ -20,14 +24,13 @@ pdf2image==1.16.3
 Pillow>=9.5.0
 
 # Vector Store
-#faiss-cpu>=1.11,<1.13
 chromadb==0.4.22
+
+# Embeddings
+sentence-transformers==2.3.1
 
 # Google Gemini
 google-generativeai==0.3.2
-
-# Embeddings (local alternative)
-sentence-transformers==2.3.1
 
 # API Framework
 fastapi==0.109.0
@@ -36,9 +39,8 @@ python-multipart==0.0.6
 
 # Utilities
 python-dotenv==1.0.0
-tiktoken==0.5.2
 numpy==1.26.3
 pandas==2.2.0
 
-# Optional: Streamlit for UI
+# Optional UI
 streamlit==1.30.0
