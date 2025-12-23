@@ -20,7 +20,7 @@ COPY handler.py /workspace/handler.py
 
 # 환경변수 설정
 ENV PYTHONUNBUFFERED=1
-ENV MODEL_NAME=naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B
+ENV MODEL_NAME=Qwen/Qwen2.5-7B-Instruct
 ENV HF_HOME=/workspace/.cache/huggingface
 ENV TRANSFORMERS_CACHE=/workspace/.cache/huggingface
 

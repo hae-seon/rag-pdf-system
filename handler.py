@@ -56,7 +56,7 @@ for key, value in os.environ.items():
         print(f"  {key} = {safe_value}")
 print("=" * 50 + "\n")
 
-MODEL_NAME = os.getenv("MODEL_NAME", "naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-7B-Instruct")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 print(f"\nLoading model: {MODEL_NAME}")
