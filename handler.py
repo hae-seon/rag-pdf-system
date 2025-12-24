@@ -148,38 +148,61 @@ print("=" * 50)
 # =========================
 # 시스템 프롬프트
 # =========================
+# handler.py의 SYSTEM_PROMPT 부분 수정
+
 SYSTEM_PROMPT = """당신은 대한약전 전문 AI 어시스턴트입니다.
-제공된 컨텍스트만을 사용하여 정확하게 답변하세요.
-컨텍스트에 없는 내용은 추측하지 마세요.
 
-답변 형식:
-1. 기본 정의 (한글명, 영문명, 화학식, 기원)
-2. 주요 특징 (성상, 용해성, 물리화학 지표)
-3. 확인시험
-4. 품질·순도 시험
-5. 정량법
-6. 저장법
-7. 요약
+답변 규칙:
+1. 제공된 문서의 내용만 사용하여 정확하게 답변
+2. 반드시 번호 매기기 형식 사용 (1. 기본 정의, 2. 성상, ...)
+3. 하위 항목은 들여쓰기 후 "   - 항목명: 내용" 형식
+4. 문서에 없는 정보는 "정보 없음"으로 표시
+5. 수치와 단위를 정확히 기재
+6. 불필요한 설명 추가하지 않기
 
-규칙:
-- 컨텍스트의 정보만 사용
-- 수치와 단위를 정확히 기재
-- 정보가 없으면 "제공된 문서에 해당 정보가 없습니다" 명시"""
+필수 답변 구조:
+
+1. 기본 정의
+   - 한글명: 
+   - 영문명: 
+   - 화학식: 
+   - 기원: 
+
+2. 성상 (물리화학적 특성)
+   - 외관: 
+   - 냄새: 
+   - 맛: 
+   - 용해성: 
+   - 비중/융점: 
+
+3. 확인시험 (분광 분석법)
+   - 
+
+4. 순도 및 불순물 시험
+   - 
+
+5. 정량법 및 함량
+   - 
+
+6. 저장 및 사용
+   - """
 
 
 def generate_answer(
-    prompt: str,
-    max_new_tokens: int = 1024,
-    temperature: float = 0.2,
-    top_p: float = 0.9,
-    top_k: int = 50,
-    repetition_penalty: float = 1.2,
+        prompt: str,
+        max_new_tokens: int = 1024,
+        temperature: float = 0.05,  # ✅ 더 낮춤
+        top_p: float = 0.9,
+        top_k: int = 50,
+        repetition_penalty: float = 1.05,  # ✅ 낮춤
 ) -> str:
     full_prompt = f"{SYSTEM_PROMPT}\n\n{prompt}"
 
-    inputs = tokenizer(full_prompt, return_tensors="pt")
+    # ... (나머지 코드 동일)
+    # ✅ SYSTEM_PROMPT 제거! 클라이언트에서 이미 완성된 프롬프트를 보냄
+    full_prompt = f"{SYSTEM_PROMPT}\n\n{prompt}"
 
-    # ✅ device_map="auto" 환경에서 가장 안전: 모델 파라미터 device로 입력 이동
+    inputs = tokenizer(full_prompt, return_tensors="pt")
     target_device = next(model.parameters()).device
     inputs = {k: v.to(target_device) for k, v in inputs.items()}
 
@@ -201,12 +224,10 @@ def generate_answer(
                 use_cache=True,
             )
 
-    # ✅ 전체를 디코딩하지 말고 "생성된 토큰만" 디코딩
     input_len = inputs["input_ids"].shape[-1]
     gen_tokens = outputs[0][input_len:]
     answer = tokenizer.decode(gen_tokens, skip_special_tokens=True).strip()
 
-    # 메모리 정리
     del inputs, outputs
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
