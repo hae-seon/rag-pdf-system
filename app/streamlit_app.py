@@ -1,1075 +1,1103 @@
 import os
 import streamlit as st
+import streamlit.components.v1 as components
 from main import RAGSystem
 from pdf_utils import pdf_page_to_image
 
-st.set_page_config(
-    page_title="AI 약전 - 대한약전 AI 검색 시스템",
-    page_icon="🏥",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
 
-# 이미지 디자인에 영감을 받은 깔끔한 스타일
 st.markdown(
     """
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&family=Google+Sans+Display:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
     <style>
-    /* 전체 배경 - 밝고 깨끗한 흰색 */
-    .main {
-        background: #ffffff !important;
-        padding: 2rem;
+    
+    /* ════════════════════════════
+       GEMINI DESIGN TOKENS
+    ════════════════════════════ */
+    :root {
+        /* Gemini color palette */
+        --bg-main:        #F0F4F8;
+        --bg-sidebar:     #E9EEF6;
+        --bg-white:       #FFFFFF;
+        --bg-surface:     #F0F4FC;
+        --bg-input:       #FFFFFF;
+        --bg-chip:        #FFFFFF;
+
+        /* Gemini blue accent */
+        --blue-primary:   #1A73E8;
+        --blue-mid:       #4285F4;
+        --blue-light:     #8AB4F8;
+        --blue-pale:      #E8F0FE;
+
+        /* Gemini multicolor */
+        --gem-blue:       #4285F4;
+        --gem-red:        #EA4335;
+        --gem-yellow:     #FBBC04;
+        --gem-green:      #34A853;
+
+        /* Text */
+        --text-primary:   #1F1F1F;
+        --text-secondary: #444746;
+        --text-muted:     #74787C;
+        --text-placeholder: #9AA0A6;
+        --text-sidebar:   #1F1F1F;
+
+        /* Border */
+        --border-light:   #E8EAED;
+        --border-mid:     #DADCE0;
+        --border-focus:   #1A73E8;
+
+        /* Shadow */
+        --shadow-xs:      0 1px 2px rgba(60,64,67,0.05);
+        --shadow-sm:      0 1px 6px rgba(60,64,67,0.08), 0 1px 2px rgba(60,64,67,0.06);
+        --shadow-md:      0 2px 12px rgba(60,64,67,0.1), 0 1px 4px rgba(60,64,67,0.06);
+        --shadow-lg:      0 4px 24px rgba(60,64,67,0.12), 0 2px 8px rgba(60,64,67,0.08);
+
+        /* Radius */
+        --r-xs:   4px;
+        --r-sm:   8px;
+        --r-md:   12px;
+        --r-lg:   16px;
+        --r-xl:   24px;
+        --r-2xl:  28px;
+        --r-full: 9999px;
+
+        /* Font */
+        --font-main:  'Noto Sans KR', 'Google Sans', sans-serif;
+        --font-display: 'Google Sans Display', 'Noto Sans KR', sans-serif;
+        --font-mono:  'DM Mono', monospace;
     }
 
+    /* ════════════════════════════
+       RESET & BASE — Gemini BG
+    ════════════════════════════ */
+    html, body,
+    [data-testid="stApp"],
+    [data-testid="stAppViewContainer"],
     .stApp {
-        background: #ffffff !important;
-    }
-
-    [data-testid="stAppViewContainer"] {
-        background: #ffffff !important;
+        background: var(--bg-main) !important;
+        color: var(--text-primary) !important;
+        font-family: var(--font-main) !important;
+        -webkit-font-smoothing: antialiased;
     }
 
     [data-testid="stHeader"] {
-        background: #ffffff !important;
+        background: transparent !important;
+        border-bottom: none !important;
     }
 
-    /* 헤더 영역 */
-    .main-header {
-        text-align: center;
-        padding: 3rem 2rem 2rem 2rem;
-        margin-bottom: 2rem;
+    .block-container {
+        background: transparent !important;
+        padding-top: 0 !important;
+        padding-bottom: 6rem !important;
+        max-width: 780px !important;
     }
 
-    .main-header h1 {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 0.5rem;
-    }
+    section { background: transparent !important; }
 
-    .main-header p {
-        font-size: 1.1rem;
-        color: #6c757d;
-        margin-top: 0.5rem;
-    }
-
-    /* 사이드바 - 밝은 배경 */
+    /* ════════════════════════════
+       SIDEBAR — Gemini left nav style
+    ════════════════════════════ */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%) !important;
-        border-right: 1px solid #e9ecef;
-    }
-
-    section[data-testid="stSidebar"] .stButton button {
-        width: 100%;
-        border-radius: 12px;
-        margin-bottom: 0.5rem;
+        background: var(--bg-sidebar) !important;
+        border-right: none !important;
     }
 
     section[data-testid="stSidebar"] > div {
         background: transparent !important;
     }
 
-    /* 질문 입력 영역 - 중앙 정렬 & 깔끔한 디자인 */
-    .question-section {
-        background: white;
-        border-radius: 16px;
-        padding: 2rem;
-        margin: 2rem auto;
-        max-width: 900px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        border: 1px solid #e9ecef;
+    /* Gemini logo area */
+    .sb-gemini-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 1.4rem 1.2rem 1.2rem;
+        margin-bottom: 0.5rem;
     }
 
-    .question-title {
+    .sb-gemini-icon {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    /* Gemini diamond icon via CSS */
+    .gem-diamond {
+        width: 24px;
+        height: 24px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .gem-diamond::before {
+        content: '✦';
+        font-size: 22px;
+        background: linear-gradient(135deg, var(--gem-blue) 0%, #8B5CF6 40%, var(--gem-red) 70%, var(--gem-yellow) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 0 6px rgba(66,133,244,0.3));
+    }
+
+    .sb-gemini-title {
+        font-size: 1.35rem;
+        font-weight: 400;
+        color: var(--text-primary) !important;
+        font-family: var(--font-display) !important;
+        letter-spacing: -0.01em;
+    }
+
+    /* New chat button */
+    .sb-new-chat {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: transparent;
+        border: none;
+        border-radius: var(--r-full);
+        padding: 0.6rem 1.2rem;
+        margin: 0 0.4rem 1rem;
+        cursor: pointer;
+        transition: background 0.18s;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        width: calc(100% - 0.8rem);
+    }
+
+    .sb-new-chat:hover {
+        background: rgba(0,0,0,0.06);
+    }
+
+    .sb-new-chat-icon {
+        width: 34px;
+        height: 34px;
+        background: var(--bg-white);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        box-shadow: var(--shadow-sm);
+        flex-shrink: 0;
+    }
+
+    /* Sidebar section labels */
+    .sb-section-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-muted) !important;
+        padding: 0.5rem 1.4rem 0.3rem;
+        letter-spacing: 0.02em;
+    }
+
+    /* Sidebar nav items */
+    .sb-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0.62rem 1rem;
+        border-radius: var(--r-full);
+        margin: 0 0.4rem;
+        cursor: pointer;
+        transition: background 0.15s;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .sb-nav-item:hover {
+        background: rgba(0,0,0,0.06);
+    }
+
+    .sb-nav-item.active {
+        background: rgba(26,115,232,0.12);
+        color: var(--blue-primary);
+        font-weight: 500;
+    }
+
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] label {
+        color: var(--text-secondary) !important;
+        font-size: 0.875rem !important;
+    }
+
+    section[data-testid="stSidebar"] h3 {
+        color: var(--text-muted) !important;
+        font-size: 0.72rem !important;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-family: var(--font-mono) !important;
+        font-weight: 500 !important;
+        margin-bottom: 0.4rem !important;
+    }
+
+    section[data-testid="stSidebar"] hr {
+        border: none !important;
+        border-top: 1px solid rgba(0,0,0,0.08) !important;
+        margin: 0.8rem 0 !important;
+    }
+
+    section[data-testid="stSidebar"] .stButton button {
+        background: rgba(255,255,255,0.7) !important;
+        color: var(--text-secondary) !important;
+        border: 1px solid var(--border-mid) !important;
+        border-radius: var(--r-full) !important;
+        font-size: 0.84rem !important;
+        font-family: var(--font-main) !important;
+        font-weight: 500 !important;
+        padding: 0.5rem 1rem !important;
+        transition: all 0.18s ease !important;
+        box-shadow: var(--shadow-xs) !important;
+    }
+
+    section[data-testid="stSidebar"] .stButton button:hover {
+        background: rgba(255,255,255,0.9) !important;
+        color: var(--text-primary) !important;
+        box-shadow: var(--shadow-sm) !important;
+    }
+
+    section[data-testid="stSidebar"] .stRadio label {
+        color: var(--text-secondary) !important;
+        font-size: 0.875rem !important;
+        padding: 0.5rem 0.8rem !important;
+        border-radius: var(--r-full) !important;
+        transition: all 0.15s !important;
+    }
+
+    section[data-testid="stSidebar"] .stRadio label:has(input:checked) {
+        background: rgba(26,115,232,0.1) !important;
+        color: var(--blue-primary) !important;
+    }
+
+    section[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+        background: rgba(255,255,255,0.6) !important;
+        border: 1px solid var(--border-mid) !important;
+        border-radius: var(--r-md) !important;
+        color: var(--text-secondary) !important;
+        font-size: 0.875rem !important;
+    }
+
+    /* ════════════════════════════
+       HERO — Gemini center layout
+    ════════════════════════════ */
+    .hero-wrap {
         text-align: center;
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 1.5rem;
-        color: #2c3e50;
+        padding: 5.5rem 2rem 3rem;
+        position: relative;
+    }
+
+    .hero-gemini-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.4rem;
+        position: relative;
+    }
+
+    .hero-gem-star {
+        font-size: 3.2rem;
+        background: linear-gradient(135deg, var(--gem-blue) 0%, #8B5CF6 35%, var(--gem-red) 65%, var(--gem-yellow) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 0 16px rgba(66,133,244,0.25));
+        animation: gemPulse 3s ease-in-out infinite;
+        line-height: 1;
+    }
+
+    @keyframes gemPulse {
+        0%, 100% { filter: drop-shadow(0 0 10px rgba(66,133,244,0.2)); }
+        50%       { filter: drop-shadow(0 0 22px rgba(66,133,244,0.45)); }
+    }
+
+    .hero-greeting {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        font-weight: 400;
+        margin: 0 0 0.35rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .hero-greeting-name {
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .hero-title {
+        font-family: var(--font-display);
+        font-size: 2.55rem;
+        font-weight: 400;
+        color: var(--text-primary);
+        line-height: 1.18;
+        margin: 0;
+        letter-spacing: -0.02em;
+    }
+
+    /* ════════════════════════════
+       SEARCH INPUT — Gemini pill style
+    ════════════════════════════ */
+    .search-container {
+        position: relative;
+        margin-top: 2.8rem;
     }
 
     div.stTextArea textarea {
-        border-radius: 16px !important;
-        border: 2px solid #e0e0e0 !important;
-        background: #ffffff !important;
-        color: #2c3e50 !important;
-        font-size: 16px !important;
-        padding: 20px !important;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        transition: all 0.3s ease;
+        background: var(--bg-white) !important;
+        border: 1px solid var(--border-mid) !important;
+        border-radius: 28px !important;
+        color: var(--text-primary) !important;
+        font-family: var(--font-main) !important;
+        font-size: 15px !important;
+        font-weight: 400 !important;
+        padding: 18px 100px 18px 24px !important;
+        box-shadow: var(--shadow-sm) !important;
+        transition: all 0.2s ease !important;
+        line-height: 1.55 !important;
+        resize: none !important;
     }
 
     div.stTextArea textarea:focus {
-        border-color: #667eea !important;
-        background: #ffffff !important;
-        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 4px 16px rgba(0,0,0,0.1);
+        border-color: transparent !important;
+        box-shadow: 0 0 0 2px var(--gem-blue), 0 2px 14px rgba(66,133,244,0.12) !important;
+        outline: none !important;
     }
 
     div.stTextArea textarea::placeholder {
-        color: #adb5bd;
+        color: var(--text-placeholder) !important;
+        font-weight: 400;
     }
 
-    /* 답변 섹션 - 카드형 디자인 */
-    .answer-section {
-        background: white;
-        border: 1px solid #e9ecef;
-        border-radius: 16px;
-        padding: 2rem;
-        font-size: 15px;
-        line-height: 1.8;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    div.stTextArea label {
+        display: none !important;
     }
 
-    .section-title {
-        color: #2c3e50;
-        font-weight: 700;
-        font-size: 18px;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #e9ecef;
-    }
-
-    .source-path {
-        font-size: 12px;
-        color: #6c757d;
-        margin-top: 4px;
-    }
-
-    /* 버튼 - 밝고 예쁜 스타일 */
+    /* ════════════════════════════
+       BUTTONS
+    ════════════════════════════ */
     .stButton button {
-        border-radius: 12px;
-        font-weight: 600;
-        padding: 0.75rem 2rem;
-        transition: all 0.3s ease;
-        border: none;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white !important;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        font-family: var(--font-main) !important;
+        font-weight: 500 !important;
+        border-radius: var(--r-full) !important;
+        transition: all 0.2s ease !important;
+        letter-spacing: 0 !important;
     }
 
-    .stButton button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    .stButton button[kind="primary"] {
+        background: var(--blue-primary) !important;
+        color: #fff !important;
+        border: none !important;
+        padding: 0.72rem 2.2rem !important;
+        font-size: 0.9rem !important;
+        box-shadow: 0 2px 12px rgba(26,115,232,0.3) !important;
+    }
+
+    .stButton button[kind="primary"]:hover {
+        background: #1557B0 !important;
+        box-shadow: 0 4px 18px rgba(26,115,232,0.4) !important;
+        transform: translateY(-1px) !important;
     }
 
     .stButton button[kind="secondary"] {
-        background: white !important;
-        color: #667eea !important;
-        border: 2px solid #667eea !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        background: var(--bg-white) !important;
+        color: var(--text-secondary) !important;
+        border: 1px solid var(--border-mid) !important;
+        padding: 0.62rem 1.4rem !important;
+        font-size: 0.875rem !important;
+        box-shadow: var(--shadow-xs) !important;
     }
 
     .stButton button[kind="secondary"]:hover {
-        background: #667eea !important;
-        color: white !important;
+        background: var(--bg-surface) !important;
+        border-color: var(--blue-primary) !important;
+        color: var(--blue-primary) !important;
+        box-shadow: var(--shadow-sm) !important;
     }
 
-    /* Primary 버튼 */
-    .stButton button[kind="primary"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: white !important;
-        border: none !important;
+    /* ════════════════════════════
+       ANSWER CARD — Gemini response style
+    ════════════════════════════ */
+    /* ── 질문 버블 ── */
+    .question-bubble {
+        display: flex;
+        justify-content: flex-end;
+        margin: 2.4rem 0 0.8rem;
     }
 
-    /* 메트릭 */
-    [data-testid="stMetricValue"] {
-        font-size: 28px;
-        font-weight: 700;
-        color: #667eea;
+    .question-bubble-inner {
+        background: var(--blue-primary);
+        color: #ffffff;
+        border-radius: 20px 20px 4px 20px;
+        padding: 0.75rem 1.2rem;
+        max-width: 82%;
+        font-size: 15px;
+        line-height: 1.65;
+        font-family: var(--font-main);
+        box-shadow: 0 2px 10px rgba(26,115,232,0.25);
+        word-break: break-word;
+        white-space: pre-wrap;
     }
 
-    /* 라디오 버튼 */
-    .stRadio > label {
-        font-weight: 600;
-        color: #2c3e50;
+    .sec-div {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 1rem 0 1.2rem;
     }
 
-    /* 익스팬더 - 둥근 모서리 */
+    .sec-div::before, .sec-div::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border-light);
+    }
+
+    .sec-div span {
+        font-size: 0.7rem;
+        font-family: var(--font-mono);
+        color: var(--text-muted);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .answer-card {
+        background: var(--bg-white);
+        border: 1px solid var(--border-light);
+        border-radius: var(--r-xl);
+        overflow: hidden;
+        margin-bottom: 1rem;
+        box-shadow: var(--shadow-sm);
+        animation: fadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .answer-card-hd {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0.9rem 1.4rem;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .answer-gem-icon {
+        font-size: 1rem;
+        background: linear-gradient(135deg, var(--gem-blue), #8B5CF6, var(--gem-red));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .answer-label {
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        font-family: var(--font-main);
+        letter-spacing: 0;
+    }
+
+    .answer-body {
+        padding: 1.4rem 1.6rem;
+        font-size: 15px;
+        line-height: 1.9;
+        color: var(--text-primary);
+    }
+
+    /* ════════════════════════════
+       EXPANDER
+    ════════════════════════════ */
+    [data-testid="stExpander"] summary,
     .streamlit-expanderHeader {
-        background-color: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 12px;
-        font-weight: 600;
-        color: #2c3e50;
+        background: var(--bg-white) !important;
+        border: 1px solid var(--border-mid) !important;
+        border-radius: var(--r-lg) !important;
+        color: var(--text-secondary) !important;
+        font-family: var(--font-main) !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        transition: all 0.15s !important;
+        padding: 0.75rem 1rem !important;
     }
 
-    /* Spinner - 로딩 애니메이션 색상 */
-    .stSpinner > div {
-        border-top-color: #667eea !important;
+    [data-testid="stExpander"] summary:hover {
+        background: var(--bg-surface) !important;
+        border-color: var(--blue-primary) !important;
+        color: var(--blue-primary) !important;
     }
 
-    div[data-testid="stSpinner"] > div {
-        border-top-color: #667eea !important;
+    [data-testid="stExpander"] {
+        border: none !important;
+        background: transparent !important;
     }
 
-    .stSpinner {
-        color: #2c3e50 !important;
-    }
-
-    /* 성공/에러 메시지 - 둥근 디자인 */
+    /* ════════════════════════════
+       MESSAGE BOXES
+    ════════════════════════════ */
     .stSuccess {
-        background-color: #d4edda !important;
-        color: #155724 !important;
-        border-radius: 12px;
-        border: none;
-        padding: 1rem;
-        box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+        background: #E6F4EA !important;
+        border: 1px solid #CEEAD6 !important;
+        border-radius: var(--r-lg) !important;
+        color: #137333 !important;
     }
 
     .stError {
-        background-color: #f8d7da;
-        color: #721c24;
-        border-radius: 12px;
-        border: none;
-        padding: 1rem;
-        box-shadow: 0 2px 8px rgba(244, 67, 54, 0.2);
+        background: #FCE8E6 !important;
+        border: 1px solid #F5C6C2 !important;
+        border-radius: var(--r-lg) !important;
+        color: #C5221F !important;
     }
 
     .stInfo {
-        background-color: #d1ecf1;
-        color: #0c5460;
-        border-radius: 12px;
-        border: none;
-        padding: 1rem;
-        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+        background: var(--blue-pale) !important;
+        border: 1px solid #C5D9F8 !important;
+        border-radius: var(--r-lg) !important;
+        color: #1A73E8 !important;
     }
 
-    /* 구분선 */
-    hr {
-        margin: 2rem 0;
-        border: none;
-        border-top: 1px solid #e9ecef;
+    .stWarning {
+        background: #FEF9E7 !important;
+        border: 1px solid #FDD663 !important;
+        border-radius: var(--r-lg) !important;
+        color: #856404 !important;
     }
 
-    /* 컬럼 간격 */
-    [data-testid="column"] {
-        padding: 0 0.75rem;
-    }
+    /* ════════════════════════════
+       MISC
+    ════════════════════════════ */
+    .stSpinner > div { border-top-color: var(--blue-primary) !important; }
 
-    /* 입력 필드 */
-    input {
-        background: #f8f9fa !important;
-        color: #2c3e50 !important;
-        border: 2px solid #e9ecef !important;
-        border-radius: 12px !important;
-        padding: 0.75rem !important;
-        transition: all 0.3s ease;
-    }
-
-    input:focus {
-        border-color: #667eea !important;
-        background: #ffffff !important;
-        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
-    }
-
-    /* 헤더 타이틀 스타일 */
     h1, h2, h3 {
-        color: #2c3e50;
-        font-weight: 700;
+        font-family: var(--font-display) !important;
+        color: var(--text-primary) !important;
     }
 
-    /* 전체 앱 배경 강제 밝게 */
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
-        background-color: #ffffff !important;
+    .stMarkdown h3 {
+        border-bottom: 1px solid var(--border-light) !important;
+        padding-bottom: 0.5rem !important;
     }
 
-    /* 메인 블록 배경 */
-    .block-container {
-        background-color: #ffffff !important;
-        padding-top: 2rem !important;
+    hr {
+        border: none !important;
+        border-top: 1px solid var(--border-light) !important;
+        margin: 1.5rem 0 !important;
     }
 
-    /* 모든 섹션 배경 */
-    section {
-        background-color: transparent !important;
+    [data-testid="stSelectbox"] > div > div {
+        background: var(--bg-white) !important;
+        border: 1px solid var(--border-mid) !important;
+        border-radius: var(--r-md) !important;
+        color: var(--text-primary) !important;
+    }
+
+    input[type="text"] {
+        background: var(--bg-white) !important;
+        border: 1px solid var(--border-mid) !important;
+        border-radius: var(--r-md) !important;
+        color: var(--text-primary) !important;
+        font-family: var(--font-main) !important;
+        padding: 0.7rem 1rem !important;
+    }
+
+    input[type="text"]:focus {
+        border-color: var(--blue-primary) !important;
+        box-shadow: 0 0 0 2px rgba(26,115,232,0.2) !important;
+    }
+
+    [data-testid="stFileUploader"] {
+        background: var(--bg-white) !important;
+        border: 1.5px dashed var(--border-mid) !important;
+        border-radius: var(--r-lg) !important;
+    }
+
+    /* "Drag and drop files here · Limit 200MB" 숨김 */
+    [data-testid="stFileUploaderDropzoneInstructions"] > div > span,
+    [data-testid="stFileUploaderDropzoneInstructions"] > div > small {
+        display: none !important;
+    }
+
+    /* "Browse files" → "파일추가" */
+    [data-testid="stFileUploaderDropzone"] button {
+        font-size: 0 !important;
+        color: transparent !important;
+    }
+    [data-testid="stFileUploaderDropzone"] button::after {
+        content: "파일추가";
+        font-size: 0.875rem;
+        color: var(--blue-primary);
+        font-family: var(--font-main);
+        font-weight: 500;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 4px; }
+
+    /* ════════════════════════════
+       COMPONENT HELPERS
+    ════════════════════════════ */
+    .src-path {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+    }
+
+    .doc-preview {
+        font-size: 0.84rem;
+        color: var(--text-secondary);
+        line-height: 1.7;
+        font-family: var(--font-main);
+        background: var(--bg-surface);
+        border-radius: var(--r-md);
+        padding: 0.8rem 1rem;
+        border-left: 3px solid var(--blue-primary);
+    }
+
+    .footer {
+        text-align: center;
+        padding: 2rem 0 1rem;
+        margin-top: 4rem;
+        border-top: 1px solid var(--border-light);
+    }
+
+    .footer span {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        letter-spacing: 0.08em;
+    }
+
+    /* Gemini-style status badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: var(--bg-white);
+        border: 1px solid var(--border-mid);
+        border-radius: var(--r-full);
+        padding: 3px 10px;
+        font-size: 0.68rem;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        letter-spacing: 0.06em;
+        box-shadow: var(--shadow-xs);
+    }
+
+    .status-dot {
+        width: 6px; height: 6px;
+        background: #34A853;
+        border-radius: 50%;
+        animation: blink 2.4s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+    }
+
+    /* User profile chip */
+    .sb-profile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0.7rem 1.2rem;
+        border-radius: var(--r-full);
+        margin: 0.5rem 0.4rem;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+
+    .sb-profile:hover {
+        background: rgba(0,0,0,0.06);
+    }
+
+    .sb-avatar {
+        width: 32px; height: 32px;
+        background: linear-gradient(135deg, var(--gem-blue), #8B5CF6);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: #fff;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .sb-profile-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-primary) !important;
+    }
+
+    .sb-profile-role {
+        font-size: 0.72rem;
+        color: var(--text-muted) !important;
+        font-family: var(--font-mono);
+    }
+
+    /* ── 문서 관리 파일 리스트 ── */
+    .sb-doc-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.9rem 1.2rem 0.5rem;
+    }
+
+    .sb-doc-title {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-family: var(--font-mono);
+    }
+
+    .sb-doc-badge {
+        font-size: 0.68rem;
+        padding: 2px 9px;
+        border-radius: var(--r-full);
+        font-family: var(--font-mono);
+        font-weight: 500;
+    }
+
+    .sb-doc-badge.loaded {
+        background: #E6F4EA;
+        color: #137333;
+    }
+
+    .sb-doc-badge.empty {
+        background: #F1F3F4;
+        color: #9AA0A6;
+    }
+
+    .sb-file-list {
+        padding: 0 1.2rem 0.6rem;
+        max-height: 140px;
+        overflow-y: auto;
+    }
+
+    .sb-file-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+        font-family: var(--font-mono);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .sb-upload-hint {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-align: center;
+        padding: 0.6rem 1.2rem 0.4rem;
+    }
+
+    /* Gemini bottom right upgrade btn */
+    .upgrade-hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: linear-gradient(135deg, var(--gem-blue) 0%, #8B5CF6 100%);
+        color: #fff !important;
+        font-size: 0.78rem;
+        font-weight: 500;
+        padding: 5px 14px;
+        border-radius: var(--r-full);
+        box-shadow: 0 2px 10px rgba(66,133,244,0.3);
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# -----------------------------
-# RAGSystem 한 번만 생성
-# -----------------------------
+
+# ─────────────────────────────────────
+#  RAG 시스템
+# ─────────────────────────────────────
 @st.cache_resource
 def get_rag_system():
     return RAGSystem()
 
 rag = get_rag_system()
 
-# index 로드 상태 플래그
 if "index_loaded" not in st.session_state:
     st.session_state["index_loaded"] = False
 
-# -----------------------------
-# 사이드바: 로고 및 타이틀
-# -----------------------------
-st.sidebar.markdown(
-    """
-    <div style="text-align: center; padding: 1.5rem 0;">
-        <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">🏥 AI 약전</h1>
-        <p style="font-size: 0.9rem; color: #6c757d;">대한약전 AI 검색 시스템</p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-st.sidebar.markdown("---")
 
-# 사용자 정보 (로그인 기능은 추후 구현)
-st.sidebar.markdown(
-    """
-    <div style="padding: 0.75rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
-        <p style="margin: 0; font-size: 0.9rem;"><b>👤 사용자</b></p>
-        <p style="margin: 0; font-size: 0.85rem; color: #6c757d;">aid003 홍길동</p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-# -----------------------------
-# 사이드바: 주요 메뉴
-# -----------------------------
-st.sidebar.markdown("### 📋 메뉴")
-
-# 메뉴 선택 (라디오 버튼으로 변경)
-if "menu_selection" not in st.session_state:
-    st.session_state["menu_selection"] = "약전 검색"
-
-menu_option = st.sidebar.radio(
-    "메뉴를 선택하세요",
-    ["약전 검색", "요약 및 비교"],
-    index=0,
-    label_visibility="collapsed"
-)
-
-st.session_state["menu_selection"] = menu_option
+# ══════════════════════════════════════
+#  SIDEBAR — Gemini left nav
+# ══════════════════════════════════════
 
 st.sidebar.markdown("---")
 
-# -----------------------------
-# 사이드바: 인덱스 관리
-# -----------------------------
-st.sidebar.markdown("### ⚙️ 인덱스 관리")
+# User profile
+st.sidebar.markdown(
+    """
+    <div class="sb-profile">
+        <div class="sb-avatar">홍</div>
+        <div>
+            <div class="sb-profile-name">홍길동</div>
+            <div class="sb-profile-role">aid003 · 심사관</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-# 0-1. 기존 인덱스 로드 버튼
-if st.sidebar.button("🔄 벡터 인덱스 로드", use_container_width=True, type="secondary"):
-    try:
-        rag.load_existing_index()
-        st.session_state["index_loaded"] = True
-        st.sidebar.success("✅ 인덱스 로드 완료")
-    except Exception as e:
-        st.sidebar.error(f"인덱스 로드 실패: {e}")
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 파일관리")
 
-# 0-2. PDF 업로드
-with st.sidebar.expander("📂 PDF 업로드", expanded=False):
+with st.sidebar.expander("📂  파일 업로드", expanded=False):
     uploaded_files = st.file_uploader(
-        "PDF 파일들을 업로드하세요",
+        "파일을 업로드하세요",
         type=["pdf"],
         accept_multiple_files=True,
-        key="pdf_uploader"
+        key="pdf_uploader",
     )
 
-    if st.button("📥 인덱스에 추가", use_container_width=True, type="secondary", key="upload_btn"):
+    if st.button("📥  파일 추가", use_container_width=True, type="secondary", key="upload_btn"):
         if not uploaded_files:
-            st.warning("먼저 PDF 파일을 업로드해주세요.")
+            st.warning("먼저 PDF를 업로드해주세요.")
         else:
             try:
                 upload_dir = os.path.join("data", "uploaded_pdfs")
                 os.makedirs(upload_dir, exist_ok=True)
+                ingested_files = set()
+                if rag.vector_store.vectorstore is not None and hasattr(rag.vector_store.vectorstore, 'docstore'):
+                    for doc in rag.vector_store.vectorstore.docstore._dict.values():
+                        sf = doc.metadata.get("source_file")
+                        if sf:
+                            ingested_files.add(sf)
 
                 all_chunks = []
+                skipped = []
                 for file in uploaded_files:
+                    if file.name in ingested_files:
+                        skipped.append(file.name)
+                        continue
                     save_path = os.path.join(upload_dir, file.name)
                     with open(save_path, "wb") as f:
                         f.write(file.getbuffer())
-
                     docs = rag.pdf_processor.process_pdf(save_path)
                     all_chunks.extend(docs)
 
-                if not all_chunks:
-                    st.error("업로드한 PDF에서 추출된 내용이 없습니다.")
-                else:
+                if all_chunks:
                     if rag.vector_store.vectorstore is None:
                         rag.vector_store.create_vectorstore(all_chunks)
                     else:
                         rag.vector_store.ingest_documents(all_chunks)
+                    rag.vector_store.save_vectorstore()
 
-                    st.session_state["index_loaded"] = True
-                    st.success(f"✅ PDF {len(uploaded_files)}개를 인덱스에 반영했습니다.")
+                st.session_state["index_loaded"] = True
+                st.success(f"✅ PDF {len(uploaded_files)}개 반영 완료")
             except Exception as e:
-                st.error(f"PDF 업로드/임베딩 중 오류: {e}")
+                st.error(f"오류: {e}")
 
-# -----------------------------
-# 메인 헤더 (이미지 디자인 스타일)
-# -----------------------------
-if menu_option == "약전 검색":
-    st.markdown(
-        """
-        <div class="main-header">
-            <h1>🏥 방대한 약전 자료를 친절하게 이해하세요</h1>
-            <p>AI 대한약전 검색 시스템으로 빠르고 정확한 정보를 찾아보세요</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-elif menu_option == "요약 및 비교":
-    st.markdown(
-        """
-        <div class="main-header">
-            <h1>📑 약전 비교 및 요약</h1>
-            <p>국가별, 개정 전후, 자유 텍스트 비교 분석</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-# 아직 인덱스가 전혀 없으면 멈춤
-if (not st.session_state["index_loaded"]) and (rag.vector_store.vectorstore is None):
-    st.info(
-        "왼쪽 사이드바에서 **[저장된 벡터 인덱스 로드]** 버튼을 누르거나,\n"
-        "**PDF 파일을 업로드**하여 인덱스를 먼저 만들어주세요."
-    )
-    st.stop()
-
-# 여기까지 왔으면 벡터스토어는 로드된 상태
 db = rag.vector_store.vectorstore
 
-# -----------------------------
-# 상단: 전체 정보 요약 (약전 검색 메뉴에서만 표시)
-# -----------------------------
-if menu_option == "약전 검색":
-    col1, col2 = st.columns(2)
 
-    with col1:
-        try:
-            total_chunks = len(db.index_to_docstore_id)
-            st.metric("📊 총 벡터(청크) 수", f"{total_chunks:,}")
-        except Exception:
-            st.metric("📊 총 벡터(청크) 수", "N/A")
+# ══════════════════════════════════════
+#  MAIN — Gemini center UI
+# ══════════════════════════════════════
 
-    with col2:
-        st.metric("💾 인덱스 상태", "로드 완료 ✓")
+# Session state 초기화
+if "last_answer" not in st.session_state:
+    st.session_state["last_answer"] = None
 
-    st.markdown("<br>", unsafe_allow_html=True)
+has_result = bool(st.session_state.get("last_answer"))
 
-# =============================
-# 1) 🔍 약전 검색 메뉴
-# =============================
-if menu_option == "약전 검색":
-    # 질문 입력 영역을 카드 형태로 감싸기
+# HERO — 결과 없으면 큰 패딩으로 검색창이 화면 중앙에 위치
+# HERO — 결과 없으면만 표시
+if not has_result:
+    hero_padding = "padding: 28vh 2rem 3rem"
     st.markdown(
-        """
-        <div class="question-section">
-            <div class="question-title">💬 AI 대한약전 무엇이든 물어봐 주세요</div>
+        f"""
+        <div class="hero-wrap" style="{hero_padding}">
+            <div class="hero-title">무엇을 도와드릴까요?</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+else:
+    # 결과가 있을 때는 상단 여백만 살짝 (원하면 삭제 가능)
+    st.markdown("<div style='height:1.0rem'></div>", unsafe_allow_html=True)
+
+# ── 결과 영역 (검색창 위에 표시) ──
+answer_container = st.container()
+
+# 검색 후 입력창 초기화 (위젯 렌더링 전에 처리)
+if st.session_state.pop("_clear_input", False):
+    st.session_state["question_input"] = ""
+
+# 검색창
+question = st.text_area(
+    label="검색어",
+    label_visibility="collapsed",
+    height=100,
+    placeholder="🔍  궁금한 점을 검색해보세요",
+    key="question_input",
+)
+
+st.markdown("<div style='height:1.2rem'></div>", unsafe_allow_html=True)
+
+col1, col2, col3 = st.columns([2, 1, 2])
+with col2:
+    search_clicked = st.button("검색하기", type="primary", key="run_search", use_container_width=True)
+
+# Ctrl+Enter 단축키 — 부모 문서에 이벤트 리스너 주입
+components.html(
+    """
+    <script>
+    (function() {
+        var p = window.parent;
+        if (p.__ctrlEnterAdded) return;
+        p.__ctrlEnterAdded = true;
+        p.document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                var btns = p.document.querySelectorAll('button');
+                for (var i = 0; i < btns.length; i++) {
+                    if (btns[i].innerText.trim() === '검색하기') {
+                        btns[i].click();
+                        return;
+                    }
+                }
+            }
+        });
+    })();
+    </script>
+    """,
+    height=0,
+)
+
+
+def _render_answer(answer_text):
+    import re
+
+    def _to_html(text):
+        """마크다운 표와 텍스트를 HTML로 변환 (단일 div 렌더링용)."""
+        lines = text.split('\n')
+        parts = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            # 마크다운 표 감지 (다음 줄이 구분선인지 확인)
+            if (re.match(r'^\s*\|', line) and
+                    i + 1 < len(lines) and
+                    re.match(r'^\s*\|[\s\-:|]+\|\s*$', lines[i + 1])):
+                headers = [h.strip() for h in line.strip().strip('|').split('|')]
+                tbl = ('<table style="width:100%;border-collapse:collapse;'
+                       'font-size:14px;margin:0.6rem 0">')
+                tbl += '<thead><tr>'
+                for h in headers:
+                    tbl += (f'<th style="background:#F0F4FC;border:1px solid #DADCE0;'
+                            f'padding:8px 14px;text-align:left;font-weight:600;">{h}</th>')
+                tbl += '</tr></thead><tbody>'
+                i += 2  # 헤더 + 구분선 건너뜀
+                row_idx = 0
+                while i < len(lines) and re.match(r'^\s*\|', lines[i]):
+                    cells = [c.strip() for c in lines[i].strip().strip('|').split('|')]
+                    bg = '#F8FAFC' if row_idx % 2 else 'white'
+                    tbl += '<tr>'
+                    for cell in cells:
+                        tbl += (f'<td style="border:1px solid #E8EAED;'
+                                f'padding:8px 14px;background:{bg};">{cell}</td>')
+                    tbl += '</tr>'
+                    i += 1
+                    row_idx += 1
+                tbl += '</tbody></table>'
+                parts.append(tbl)
+            else:
+                parts.append(line if line.strip() else '<br>')
+                i += 1
+        return '<br>'.join(parts)
+
+    body_html = _to_html(answer_text)
+
+    # 질문 버블
+    last_q = st.session_state.get("last_question", "")
+    if last_q:
+        st.markdown(
+            f"""
+            <div class="question-bubble">
+                <div class="question-bubble-inner">{last_q.replace(chr(10), '<br>')}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<div class="sec-div"><span>AI 답변 결과</span></div>', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="answer-card">
+            <div class="answer-card-hd">
+                <span class="answer-gem-icon">✦</span>
+                <span class="answer-label">AI 답변</span>
+            </div>
+            <div class="answer-body">{body_html}</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    question = st.text_area(
-        label="질문 입력",
-        label_visibility="collapsed",
-        height=100,
-        placeholder="소스를 검색하거나 입력하세요 (예: 아스피린의 성상과 특성은?)",
-        key="question_input",
-    )
 
-    # 버튼을 중앙에 배치
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        search_clicked = st.button("🔍 질문 실행", type="primary", key="run_search", use_container_width=True)
-
-    if search_clicked:
-        if not question.strip():
-            st.warning("질문을 입력해주세요.")
-        else:
-            with st.spinner("생각 중..."):
+if search_clicked:
+    if not st.session_state.get("index_loaded") and rag.vector_store.vectorstore is None:
+        with answer_container:
+            st.warning("📂 PDF 파일을 업로드해주세요")
+    elif not question.strip():
+        with answer_container:
+            st.warning("검색어를 입력해주세요.")
+    else:
+        with answer_container:
+            with st.spinner("AI가 검색하고 있습니다..."):
                 try:
-                    # ===== 디버깅 로그 =====
                     import traceback
-                    print("\n" + "="*50)
-                    print("🔍 [DEBUG] RAG Query 시작")
-                    print(f"질문: {question}")
-                    print("="*50)
 
-                    # 1) 원본 RAG 답변
-                    print("[STEP 1] RAG query 호출 중...")
                     result = rag.query(question)
-                    print(f"[STEP 1] ✅ RAG query 완료")
-                    print(f"[STEP 1] result 타입: {type(result)}")
-                    print(f"[STEP 1] result 내용 (첫 200자): {str(result)[:200]}")
 
                     if isinstance(result, dict):
-                        print(f"[STEP 1] result keys: {result.keys()}")
                         answer = result.get("answer") or result.get("result") or str(result)
                     else:
                         answer = str(result)
 
-                    print(f"[STEP 1] answer 길이: {len(answer)} 글자")
-                    print(f"[STEP 1] answer 미리보기: {answer[:100]}...")
-
-                    # 2) 요약 생성
-                    print("\n[STEP 2] 요약 생성 시작...")
-                    summary_text = None
-                    try:
-                        summary_prompt = (
-                            "다음 내용을 한국어로 3~4줄 정도로 짧게 요약해줘.\n\n"
-                            f"{answer}"
-                        )
-                        print("[STEP 2] 요약 query 호출 중...")
-                        summary_result = rag.query(summary_prompt)
-                        print(f"[STEP 2] ✅ 요약 완료")
-                        print(f"[STEP 2] summary_result 타입: {type(summary_result)}")
-
-                        if isinstance(summary_result, dict):
-                            summary_text = (
-                                summary_result.get("answer")
-                                or summary_result.get("result")
-                                or str(summary_result)
-                            )
-                        else:
-                            summary_text = str(summary_result)
-                        print(f"[STEP 2] summary_text 길이: {len(summary_text)} 글자")
-                    except Exception as se:
-                        print(f"[STEP 2] ❌ 요약 생성 실패: {se}")
-                        traceback.print_exc()
-                        summary_text = f"요약 생성 중 오류가 발생했습니다: {se}"
-
-                    # 3) 출처 (PDF 이름 + 페이지)
-                    print("\n[STEP 3] 출처 정보 추출 시작...")
-                    source_docs = None
-                    if isinstance(result, dict):
-                        source_docs = result.get("source_documents") or result.get("sources")
-                        print(f"[STEP 3] source_docs 타입: {type(source_docs)}")
-                        print(f"[STEP 3] source_docs 개수: {len(source_docs) if source_docs else 0}")
-                    else:
-                        print("[STEP 3] result가 dict가 아니므로 source_docs 추출 불가")
-
-                    source_html = ""
-                    if source_docs:
-                        from collections import defaultdict
-
-                        pdf_pages = defaultdict(set)
-
-                        for idx, doc in enumerate(source_docs):
-                            print(f"\n[STEP 3] 문서 {idx+1} 처리 중...")
-                            print(f"[STEP 3]   doc 타입: {type(doc)}")
-
-                            # doc가 dict인 경우와 객체인 경우 모두 처리
-                            if isinstance(doc, dict):
-                                print("[STEP 3]   doc는 dict")
-                                meta = doc.get("metadata", {})
-                                print(f"[STEP 3]   metadata keys: {meta.keys() if meta else 'None'}")
-                                source_path = meta.get("source_file") or meta.get("source", "알 수 없는 경로")
-                                page = meta.get("page", None)
-                            else:
-                                print("[STEP 3]   doc는 객체")
-                                meta = getattr(doc, "metadata", {}) or {}
-                                print(f"[STEP 3]   metadata: {meta}")
-                                source_path = meta.get("source_file") or meta.get("source", "알 수 없는 경로")
-                                page = meta.get("page", None)
-
-                            print(f"[STEP 3]   source_path: {source_path}")
-                            print(f"[STEP 3]   page: {page}")
-
-                            if page is not None:
-                                pdf_pages[source_path].add(page)
-                            else:
-                                _ = pdf_pages[source_path]
-
-                        print(f"\n[STEP 3] pdf_pages 수집 완료: {len(pdf_pages)}개 파일")
-
-                        lines = []
-                        for src, pages in pdf_pages.items():
-                            if src and src != "알 수 없는 경로":
-                                filename = os.path.basename(src)
-                                if pages:
-                                    page_list = ", ".join(str(p) for p in sorted(pages))
-                                    lines.append(
-                                        f"<b>{filename}</b> (page: {page_list})"
-                                        f"<div class='source-path'>원본 경로: {src}</div>"
-                                    )
-                                else:
-                                    lines.append(
-                                        f"<b>{filename}</b>"
-                                        f"<div class='source-path'>원본 경로: {src}</div>"
-                                    )
-                        source_html = "<br>".join(lines)
-
-                    # ---- 화면 출력 ----
-                    print("\n[STEP 4] 화면 출력 시작...")
-                    # AI 답변 (결과 요약 데이터 표시)
-                    print("[STEP 4] AI 답변 출력 중...")
-                    st.markdown(
-                        "<div class='answer-section'>"
-                        "<div class='section-title'>[AI 답변]</div>"
-                        f"{(summary_text or answer).replace(chr(10), '<br>')}"
-                        "</div>",
-                        unsafe_allow_html=True,
-                    )
-                    print("[STEP 4] ✅ AI 답변 출력 완료")
-
-                    # 📄 출처 및 PDF 캡처 (클릭형 expander)
-                    print("[STEP 4] 출처 및 인용 섹션 출력 중...")
-                    st.markdown("---")
-                    st.markdown("### 📄 출처 및 인용")
-
-                    if source_docs:
-                        print(f"[STEP 4] source_docs 있음 ({len(source_docs)}개)")
-                        # 출처별로 그룹화
-                        from collections import defaultdict
-                        source_groups = defaultdict(list)
-
-                        for doc in source_docs:
-                            # doc가 dict인 경우와 객체인 경우 모두 처리
-                            if isinstance(doc, dict):
-                                meta = doc.get("metadata", {})
-                                source_path = meta.get("source_file") or meta.get("source", None)
-                                page = meta.get("page", None)
-                            else:
-                                meta = getattr(doc, "metadata", {}) or {}
-                                source_path = meta.get("source_file") or meta.get("source", None)
-                                page = meta.get("page", None)
-
-                            if source_path and page is not None:
-                                source_groups[source_path].append(page)
-
-                        # 각 출처별로 expander 생성
-                        for source_path, pages in source_groups.items():
-                            filename = os.path.basename(source_path)
-                            unique_pages = sorted(set(pages))
-                            page_list_str = ", ".join(str(p + 1) for p in unique_pages)
-
-                            # 📄 출처 클릭하면 PDF 캡처본 표시
-                            with st.expander(f"📄 {filename} (페이지: {page_list_str})", expanded=False):
-                                st.caption(f"원본 경로: {source_path}")
-                                st.markdown("---")
-
-                                # 각 페이지의 PDF 이미지 표시
-                                for page in unique_pages[:3]:  # 최대 3페이지까지
-                                    try:
-                                        st.markdown(f"**📸 페이지 {page + 1}**")
-                                        page_image = pdf_page_to_image(source_path, page, dpi=150)
-
-                                        if page_image:
-                                            st.image(page_image, width=400, caption=f"페이지 {page + 1}")
-                                        else:
-                                            st.warning(f"페이지 {page + 1}: PDF 이미지 변환 실패")
-                                    except Exception as img_error:
-                                        st.error(f"페이지 {page + 1} 변환 오류: {str(img_error)}")
-
-                                    st.markdown("---")
-                    else:
-                        st.info("출처 정보가 없습니다.")
-
-                    # 문서 내용 미리보기
-                    if source_docs:
-                        with st.expander("📖 문서 내용 미리보기", expanded=False):
-                            for i, doc in enumerate(source_docs[:3], 1):
-                                st.markdown(f"**문서 {i}**")
-                                # doc가 dict인 경우와 객체인 경우 모두 처리
-                                if isinstance(doc, dict):
-                                    content = doc.get("content", "")
-                                else:
-                                    content = getattr(doc, "page_content", "")
-                                st.caption(content[:200] + "..." if len(content) > 200 else content)
-                                st.markdown("---")
+                    st.session_state["last_answer"] = answer
+                    st.session_state["last_question"] = question
+                    st.session_state["_clear_input"] = True
+                    st.rerun()
 
                 except Exception as e:
-                    st.error(f"질문 처리 중 오류: {e}")
-                    st.code(traceback.format_exc())  # ✅ 전체 에러 로그(스택트레이스) 출력
+                    st.error(f"오류가 발생했습니다: {e}")
+                    st.code(traceback.format_exc())
 
-# =============================
-# 2) 📑 비교 및 요약 메뉴
-# =============================
-elif menu_option == "요약 및 비교":
-
-    # 비교 방식 선택
-    compare_type = st.radio(
-        "비교 방식 선택",
-        ["국가별 약전 비교", "개정 전/후 비교"],
-        horizontal=True,
-        key="compare_type_radio"
-    )
-
-    st.markdown("---")
-
-    # =============================
-    # 2-1) 국가별 약전 비교
-    # =============================
-    if compare_type == "국가별 약전 비교":
-        st.subheader("🌏 국가별 약전 비교")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            medicine_name = st.text_input(
-                "의약품/성분명",
-                placeholder="예: 아스피린",
-                key="medicine_name"
-            )
-
-            compare_method = st.selectbox(
-                "비교방법",
-                ["변경대비표", "나란히 비교", "차이점만 표시"],
-                key="compare_method"
-            )
-
-        with col2:
-            country1 = st.selectbox(
-                "기준 약전",
-                ["KP (대한약전 12개정)", "KP (대한약전 11개정)", "KP (대한약전 10개정)",
-                 "JP (일본약전 18.0)", "USP (미국약전 44)", "EP (유럽약전 11)"],
-                key="country1"
-            )
-
-            country2 = st.selectbox(
-                "비교 약전",
-                ["JP (일본약전 18.0)", "USP (미국약전 44)", "EP (유럽약전 11)",
-                 "KP (대한약전 12개정)", "KP (대한약전 11개정)", "KP (대한약전 10개정)"],
-                key="country2"
-            )
+if has_result and not search_clicked:
+    with answer_container:
+        _render_answer(st.session_state["last_answer"])
 
 
-
-        if st.button("🔍 비교 실행", type="primary", key="run_country_compare"):
-            if not medicine_name.strip():
-                st.warning("의약품/성분명을 입력해주세요.")
-            else:
-                with st.spinner("비교 중..."):
-                    try:
-                        # 비교 쿼리 생성
-                        prompt = (
-                            f"{country1}의 {medicine_name}과 {country2}의 {medicine_name}을 "
-                            f"{compare_method} 방식으로 비교해줘.\n\n"
-                            "다음 항목을 포함해서 정리해줘:\n"
-                            "1. 제품명 및 화학식\n"
-                            "2. 성상 및 물리적 특성\n"
-                            "3. 주요 차이점\n"
-                            "4. 공통점"
-                        )
-
-                        result = rag.query(prompt)
-
-                        if isinstance(result, dict):
-                            answer = result.get("answer") or result.get("result") or str(result)
-                        else:
-                            answer = str(result)
-
-                        # 결과 표시 (테이블 형식)
-                        st.markdown("### 📊 비교 결과")
-
-                        # 테이블 헤더
-                        st.markdown(f"**제품명**: {medicine_name} | **비교방법**: {compare_method}")
-
-                        # 비교 테이블
-                        import pandas as pd
-
-                        # 간단한 테이블 형식으로 표시
-                        compare_data = {
-                            "항목": ["약전", "설명"],
-                            country1: [country1, "기준 약전 내용"],
-                            country2: [country2, "비교 약전 내용"],
-                            "출처": ["출처 정보", "비교 분석"]
-                        }
-
-                        # 답변 내용 표시
-                        st.markdown(
-                            "<div class='answer-section'>"
-                            "<div class='section-title'>[국가별 약전 비교 분석]</div>"
-                            f"{answer.replace(chr(10), '<br>')}"
-                            "</div>",
-                            unsafe_allow_html=True,
-                        )
-
-                        # 출처 정보 가져오기
-                        if isinstance(result, dict):
-                            source_docs = result.get("source_documents") or result.get("sources")
-                            if source_docs:
-                                st.markdown("**📄 참고 문서**")
-                                for i, doc in enumerate(source_docs[:3], 1):
-                                    meta = getattr(doc, "metadata", {}) or {}
-                                    source_path = meta.get("source", "알 수 없음")
-                                    page = meta.get("page", "?")
-                                    filename = os.path.basename(source_path)
-                                    st.caption(f"{i}. {filename} (페이지 {page})")
-
-                    except Exception as e:
-                        st.error(f"비교 처리 중 오류: {e}")
-
-    # =============================
-    # 2-2) 개정 전/후 비교 (변경대비표 활용)
-    # =============================
-    elif compare_type == "개정 전/후 비교":
-        st.subheader("📋 개정 전/후 비교")
-        st.info("💡 대한민국약전 일부개정고시 변경대비표를 기반으로 검색합니다")
-
-        item_name = st.text_input(
-            "의약품/성분명 또는 검색어",
-            placeholder="예: 아스피린, 용출시험법, 잔류용매 등",
-            key="revision_item_name"
-        )
-
-        if st.button("🔍 변경사항 검색", type="primary", key="run_revision_compare"):
-            if not item_name.strip():
-                st.warning("검색어를 입력해주세요.")
-            else:
-                with st.spinner("변경대비표에서 검색 중..."):
-                    try:
-                        # 1) 변경대비표 PDF에서 상세 정보 검색 (더 구체적인 프롬프트)
-                        prompt = (
-                            f"대한민국약전 일부개정고시 변경대비표에서 '{item_name}'에 대한 변경사항을 찾아서 다음을 정확히 구분해서 답변해줘:\n\n"
-                            "=== 제품명 ===\n"
-                            "품목명을 정확히 알려줘\n\n"
-                            "=== 현행 (개정 전) ===\n"
-                            "현재 약전에 기재된 내용을 모두 알려줘\n\n"
-                            "=== 개정안 (개정 후) ===\n"
-                            "새로 개정된 내용을 모두 알려줘\n\n"
-                            "반드시 위 형식으로 구분해서 답변해줘."
-                        )
-
-                        result = rag.query(prompt)
-
-                        if isinstance(result, dict):
-                            answer = result.get("answer") or result.get("result") or str(result)
-                            source_docs = result.get("source_documents") or result.get("sources")
-                        else:
-                            answer = str(result)
-                            source_docs = None
-
-                        # 2) 변경사항 분석 (삭제, 수정, 추가 항목)
-                        analysis_prompt = (
-                            f"다음 개정 전/후 비교 내용을 분석해서 다음 형식으로 정리해줘:\n\n"
-                            f"{answer}\n\n"
-                            "=== 변경사항 분석 ===\n"
-                            "1. 삭제된 내용: (있으면 나열, 없으면 '없음')\n"
-                            "2. 수정된 내용: (있으면 나열, 없으면 '없음')\n"
-                            "3. 추가된 내용: (있으면 나열, 없으면 '없음')\n"
-                            "4. 요약: 3줄 이내로 핵심 변경사항 요약\n\n"
-                            "반드시 위 형식으로 답변해줘."
-                        )
-
-                        analysis_result = rag.query(analysis_prompt)
-
-                        if isinstance(analysis_result, dict):
-                            analysis = analysis_result.get("answer") or analysis_result.get("result") or ""
-                        else:
-                            analysis = str(analysis_result)
-
-                        # 3) 제품명 추출 (AI에게 직접 물어보기)
-                        product_name = item_name  # 기본값
-                        try:
-                            product_name_prompt = (
-                                f"다음 내용에서 제품명 또는 품목명만 추출해서 알려줘. 다른 설명 없이 제품명만 답변해:\n\n{answer[:500]}"
-                            )
-                            product_name_result = rag.query(product_name_prompt)
-
-                            if isinstance(product_name_result, dict):
-                                extracted_name = product_name_result.get("answer") or product_name_result.get("result") or ""
-                            else:
-                                extracted_name = str(product_name_result)
-
-                            # 추출된 제품명이 너무 길지 않으면 사용
-                            if extracted_name and len(extracted_name.strip()) < 100:
-                                product_name = extracted_name.strip()
-                        except:
-                            # 실패하면 answer에서 직접 파싱 시도
-                            if "=== 제품명 ===" in answer:
-                                try:
-                                    extracted = answer.split("=== 제품명 ===")[1].split("===")[0].strip()
-                                    if extracted and len(extracted) < 100:
-                                        product_name = extracted
-                                except:
-                                    pass
-                            elif "제품명:" in answer:
-                                try:
-                                    extracted = answer.split("제품명:")[1].split("\n")[0].strip()
-                                    if extracted and len(extracted) < 100:
-                                        product_name = extracted
-                                except:
-                                    pass
-                            elif "품목명:" in answer:
-                                try:
-                                    extracted = answer.split("품목명:")[1].split("\n")[0].strip()
-                                    if extracted and len(extracted) < 100:
-                                        product_name = extracted
-                                except:
-                                    pass
-
-                        # 결과 표시
-                        st.markdown("### 📊 개정 전/후 비교표")
-
-                        # 제품명 표시
-                        st.markdown(f"**제품명**: {product_name}")
-                        st.markdown("---")
-
-                        # 표 형식으로 개정 전/후 비교 (HTML 테이블 사용)
-                        st.markdown(
-                            """
-                            <style>
-                            .comparison-table {
-                                width: 100%;
-                                border-collapse: collapse;
-                                margin: 1rem 0;
-                                background: white;
-                                border-radius: 8px;
-                                overflow: hidden;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                            }
-                            .comparison-table th {
-                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                color: white;
-                                padding: 1rem;
-                                text-align: center;
-                                font-weight: 600;
-                                font-size: 16px;
-                            }
-                            .comparison-table td {
-                                padding: 1.5rem;
-                                border: 1px solid #e9ecef;
-                                vertical-align: top;
-                                line-height: 1.8;
-                            }
-                            .comparison-table .label-cell {
-                                background: #f8f9fa;
-                                font-weight: 600;
-                                width: 150px;
-                                text-align: center;
-                            }
-                            .comparison-table .content-cell {
-                                background: white;
-                            }
-                            </style>
-                            """,
-                            unsafe_allow_html=True
-                        )
-
-                        # 개정 전/후 내용을 파싱
-                        before_content = "현행 내용을 찾는 중..."
-                        after_content = "개정안 내용을 찾는 중..."
-
-                        # answer에서 개정 전/후 분리 (더 정확하게)
-                        try:
-                            if "=== 현행" in answer and "=== 개정안" in answer:
-                                parts = answer.split("=== 개정안")
-                                before_part = parts[0].split("=== 현행")[-1].strip()
-                                after_part = parts[1].split("===")[0].strip() if "===" in parts[1] else parts[1].strip()
-
-                                before_content = before_part.replace("\n", "<br>")
-                                after_content = after_part.replace("\n", "<br>")
-                            elif "현행" in answer and "개정안" in answer:
-                                parts = answer.split("개정안")
-                                before_part = parts[0].split("현행")[-1].strip()
-                                after_part = parts[1].strip()
-
-                                before_content = before_part.replace("\n", "<br>")
-                                after_content = after_part.replace("\n", "<br>")
-                        except Exception as e:
-                            st.warning(f"내용 파싱 중 오류: {e}")
-
-                        # 비교표 출력
-                        comparison_html = f"""
-                        <table class="comparison-table">
-                            <thead>
-                                <tr>
-                                    <th>제품명</th>
-                                    <th colspan="2">{product_name}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="label-cell">현행<br>(개정 전)</td>
-                                    <td class="content-cell" colspan="2">{before_content}</td>
-                                </tr>
-                                <tr>
-                                    <td class="label-cell">개정안<br>(개정 후)</td>
-                                    <td class="content-cell" colspan="2">{after_content}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        """
-                        st.markdown(comparison_html, unsafe_allow_html=True)
-
-                        # 변경사항 분석
-                        st.markdown("---")
-                        st.markdown(
-                            "<div class='answer-section'>"
-                            "<div class='section-title'>🔍 변경사항 분석</div>"
-                            f"{analysis.replace(chr(10), '<br>')}"
-                            "</div>",
-                            unsafe_allow_html=True,
-                        )
-
-                        # 📄 출처 및 PDF 이미지 (약전 검색과 동일한 방식)
-                        st.markdown("---")
-                        st.markdown("### 📄 출처 및 인용")
-
-                        if source_docs:
-                            # 출처별로 그룹화
-                            from collections import defaultdict
-                            source_groups = defaultdict(list)
-
-                            for doc in source_docs:
-                                # doc가 dict인 경우와 객체인 경우 모두 처리
-                                if isinstance(doc, dict):
-                                    meta = doc.get("metadata", {})
-                                    source_path = meta.get("source_file") or meta.get("source", None)
-                                    page = meta.get("page", None)
-                                else:
-                                    meta = getattr(doc, "metadata", {}) or {}
-                                    source_path = meta.get("source_file") or meta.get("source", None)
-                                    page = meta.get("page", None)
-
-                                if source_path and page is not None:
-                                    source_groups[source_path].append(page)
-
-                            # 각 출처별로 expander 생성
-                            for source_path, pages in source_groups.items():
-                                filename = os.path.basename(source_path)
-                                unique_pages = sorted(set(pages))
-                                page_list_str = ", ".join(str(p + 1) for p in unique_pages)
-
-                                # 📄 출처 클릭하면 PDF 캡처본 표시
-                                with st.expander(f"📄 {filename} (페이지: {page_list_str})", expanded=False):
-                                    st.caption(f"원본 경로: {source_path}")
-                                    st.markdown("---")
-
-                                    # 각 페이지의 PDF 이미지 표시
-                                    for page in unique_pages[:3]:  # 최대 3페이지까지
-                                        try:
-                                            st.markdown(f"**📸 페이지 {page + 1}**")
-                                            page_image = pdf_page_to_image(source_path, page, dpi=150)
-
-                                            if page_image:
-                                                st.image(page_image, width=400, caption=f"페이지 {page + 1}")
-                                            else:
-                                                st.warning(f"페이지 {page + 1}: PDF 이미지 변환 실패")
-                                        except Exception as img_error:
-                                            st.error(f"페이지 {page + 1} 변환 오류: {str(img_error)}")
-
-                                        st.markdown("---")
-                        else:
-                            st.info("출처 정보가 없습니다.")
-
-                        # 전체 AI 답변 (상세 내용)
-                        with st.expander("📋 전체 상세 내용 보기", expanded=False):
-                            st.markdown("**원본 답변:**")
-                            st.markdown(answer)
-                            st.markdown("---")
-                            st.markdown("**변경사항 분석:**")
-                            st.markdown(analysis)
-
-                    except Exception as e:
-                        st.error(f"검색 중 오류: {e}")
-
-# =============================
-# 3) 기타 메뉴들 (준비 중)
-# =============================
-elif menu_option == "시험결과분석":
-    st.info("🚧 시험결과분석 기능은 준비 중입니다.")
-
-elif menu_option == "신규약전설정":
-    st.info("🚧 신규약전설정 기능은 준비 중입니다.")
-
-elif menu_option == "외국약전법역":
-    st.info("🚧 외국약전법역 기능은 준비 중입니다.")
+# FOOTER
+st.markdown(
+    """
+    <div class="footer">
+        <span>PHARMACEUTICAL AI SYSTEM · MFDS INTELLIGENCE PLATFORM · v2.0</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)

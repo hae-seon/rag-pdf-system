@@ -1,5 +1,5 @@
 """
-Vector Store Management - HuggingFace Local Embeddings with Hybrid Search
+Vector Store Management - OpenAI / HuggingFace Embeddings with Hybrid Search
 """
 import os
 from typing import List
@@ -7,11 +7,13 @@ import logging
 from rank_bm25 import BM25Okapi
 
 from langchain_community.vectorstores import FAISS, Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# OpenAI 모델명 패턴
+_OPENAI_EMBEDDING_PREFIXES = ("text-embedding-", "text-search-", "text-similarity-")
 
 
 class VectorStoreManager:
@@ -24,14 +26,20 @@ class VectorStoreManager:
         self.store_type = store_type
         self.store_path = store_path
 
-        # ▶ HuggingFace 로컬 임베딩 (한국어 특화)
-        logger.info(f"Loading local embedding model: {embedding_model}")
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name=embedding_model,
-            model_kwargs={'device': 'cpu'},  # GPU 사용 시 'cuda'로 변경
-            encode_kwargs={'normalize_embeddings': True}
-        )
-        logger.info("Local embedding model loaded successfully")
+        # 임베딩 모델 자동 선택: OpenAI vs HuggingFace
+        if embedding_model.startswith(_OPENAI_EMBEDDING_PREFIXES):
+            from langchain_openai import OpenAIEmbeddings
+            logger.info(f"Loading OpenAI embedding model: {embedding_model}")
+            self.embeddings = OpenAIEmbeddings(model=embedding_model)
+        else:
+            from langchain_community.embeddings import HuggingFaceEmbeddings
+            logger.info(f"Loading HuggingFace embedding model: {embedding_model}")
+            self.embeddings = HuggingFaceEmbeddings(
+                model_name=embedding_model,
+                model_kwargs={'device': 'cpu'},
+                encode_kwargs={'normalize_embeddings': True}
+            )
+        logger.info("Embedding model loaded successfully")
 
         self.vectorstore = None
         os.makedirs(store_path, exist_ok=True)
@@ -70,7 +78,6 @@ class VectorStoreManager:
 
     def load_vectorstore(self, name: str = "index") -> None:
         if self.store_type == "faiss":
-            print('test',self.store_path)
             load_path = os.path.join(self.store_path, name)
             self.vectorstore = FAISS.load_local(
                 load_path,
@@ -130,22 +137,22 @@ class VectorStoreManager:
         top_bm25_indices = sorted(range(len(bm25_scores)), key=lambda i: bm25_scores[i], reverse=True)[:k*2]
         bm25_results = [all_docs[i] for i in top_bm25_indices]
 
-        # 3. 결과 합치기 (중복 제거)
-        seen_ids = set()
+        # 3. 결과 합치기 (중복 제거 - page_content 해시 기반)
+        seen_hashes = set()
         hybrid_results = []
 
         # 시맨틱 결과 우선 추가
         for doc in semantic_results:
-            doc_id = id(doc)
-            if doc_id not in seen_ids:
-                seen_ids.add(doc_id)
+            doc_hash = hash(doc.page_content)
+            if doc_hash not in seen_hashes:
+                seen_hashes.add(doc_hash)
                 hybrid_results.append(doc)
 
         # BM25 결과 추가
         for doc in bm25_results:
-            doc_id = id(doc)
-            if doc_id not in seen_ids:
-                seen_ids.add(doc_id)
+            doc_hash = hash(doc.page_content)
+            if doc_hash not in seen_hashes:
+                seen_hashes.add(doc_hash)
                 hybrid_results.append(doc)
 
         # 상위 k개만 반환

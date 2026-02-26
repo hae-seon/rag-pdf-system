@@ -1,36 +1,23 @@
-# Core Transformers (통합)
-transformers>=4.57.0
-torch>=2.0.0
-accelerate>=0.20.0
-tokenizers>=0.19.1
-sentencepiece
-protobuf
-safetensors
-
-# Quantization & Optimization
-bitsandbytes>=0.41.0
-optimum>=1.12.0
-huggingface_hub>=0.23.0
+# LLM & Embeddings (OpenAI)
+openai>=1.0.0
+langchain-openai>=0.1.1
 
 # RAG Dependencies
 langchain>=0.3.0
 langchain-community>=0.3.0
-langchain-google-genai>=0.0.6
+langchain-text-splitters>=0.3.0
 
 # PDF Processing
+pypdf>=3.0.0
 pypdf2==3.0.1
 pdfplumber==0.10.3
 pdf2image==1.16.3
 Pillow>=9.5.0
 
 # Vector Store
+faiss-cpu>=1.7.0
 chromadb==0.4.22
-
-# Embeddings
-sentence-transformers==2.3.1
-
-# Google Gemini
-google-generativeai==0.3.2
+rank_bm25>=0.2.2
 
 # API Framework
 fastapi==0.109.0
@@ -41,6 +28,11 @@ python-multipart==0.0.6
 python-dotenv==1.0.0
 numpy==1.26.3
 pandas==2.2.0
+huggingface_hub>=0.23.0
+sentencepiece
+protobuf
+safetensors
+tokenizers>=0.19.1
 
 # Optional UI
 streamlit==1.30.0

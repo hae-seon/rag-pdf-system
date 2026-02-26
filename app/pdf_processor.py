@@ -3,7 +3,7 @@ PDF Processing Module
 """
 import os
 from typing import List
-from langchain_community.document_loaders import PyPDFLoader  # type: ignore
+from langchain_community.document_loaders import PDFPlumberLoader  # type: ignore
 from langchain_text_splitters import RecursiveCharacterTextSplitter # type: ignore
 from langchain_core.documents import Document  # type: ignore
 import logging
@@ -26,7 +26,7 @@ class PDFProcessor:
         """Load a PDF file and return its pages as LangChain Documents."""
         try:
             logger.info(f"Loading PDF: {pdf_path}")
-            loader = PyPDFLoader(pdf_path)
+            loader = PDFPlumberLoader(pdf_path)
             documents = loader.load()
             logger.info(f"Loaded {len(documents)} pages")
             return documents
@@ -49,8 +49,9 @@ class PDFProcessor:
         documents = self.load_pdf(pdf_path)
         chunks = self.split_documents(documents)
 
+        base_name = os.path.basename(pdf_path)
         for i, chunk in enumerate(chunks):
-            chunk.metadata["chunk_id"] = i
-            chunk.metadata["source_file"] = os.path.basename(pdf_path)
+            chunk.metadata["chunk_id"] = f"{base_name}#{i}"
+            chunk.metadata["source_file"] = base_name
 
         return chunks

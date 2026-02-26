@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 
 from pdf_processor import PDFProcessor
 from vector_store import VectorStoreManager
-from qa_chain import QAChain  # 로컬 모델
-from qa_chain_runpod import QAChainRunPod  # RunPod API
 
 # Load environment variables
 load_dotenv()
@@ -29,29 +27,34 @@ class RAGSystem:
         self.vector_store = VectorStoreManager(
             store_type=os.getenv("VECTOR_STORE_TYPE", "faiss"),
             store_path=os.getenv("VECTOR_STORE_PATH", "./data/vectors"),
-            # OpenAI 임베딩 기본값으로 교체
             embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
         )
 
-        self.qa_chain: QAChain | QAChainRunPod | None = None
+        self.qa_chain = None
 
     def _ensure_qa_chain(self):
         if self.qa_chain is None:
-            llm_type = os.getenv("LLM_TYPE", "local").lower()
+            llm_type = os.getenv("LLM_TYPE", "friendli").lower()
 
-            if llm_type == "runpod":
-                # RunPod API 사용
-                self.qa_chain = QAChainRunPod(
-                    api_key=os.getenv("RUNPOD_API_KEY"),
-                    endpoint_id=os.getenv("RUNPOD_ENDPOINT_ID"),
-                    temperature=float(os.getenv("LLM_TEMPERATURE", 0.2)),
+            if llm_type == "friendli":
+                from qa_chain_friendli_old import QAChainFriendli
+                self.qa_chain = QAChainFriendli(
+                    model_name=os.getenv("LLM_MODEL", "LGAI-EXAONE/EXAONE-4.0.1-32B"),
                 )
-                logger.info("Using RunPod API for LLM")
+                logger.info("Using Friendli EXAONE Serverless API")
+
+            # elif llm_type == "openai":
+            #     from qa_chain_openai import QAChainOpenAI
+            #     self.qa_chain = QAChainOpenAI(
+            #         model_name=os.getenv("LLM_MODEL", "gpt-4o-mini"),
+            #
+            #     )
+            #     logger.info("Using OpenAI API for LLM")
             else:
-                # 로컬 모델 사용
+                from qa_chain import QAChain
                 self.qa_chain = QAChain(
-                    model_name=os.getenv("LLM_MODEL", "qwen2"),
-                    temperature=float(os.getenv("LLM_TEMPERATURE", 0.2)),
+                    model_name=os.getenv("LLM_MODEL"),
+
                 )
                 logger.info("Using local LLM model")
 
@@ -92,7 +95,7 @@ class RAGSystem:
         k = int(os.getenv("TOP_K", 5))
         docs = self.vector_store.search(question.strip(), k=k)
 
-        # 2) Generate (OpenAI)
+        # 2) Generate
         self._ensure_qa_chain()
         answer = self.qa_chain.answer(question.strip(), contexts=docs)
 
@@ -110,6 +113,6 @@ class RAGSystem:
 
         return {"answer": answer, "sources": sources}
 
+    if __name__ == "__main__":
+        print("RAG System initialized. Ready to use!")
 
-if __name__ == "__main__":
-    print("RAG System initialized. Ready to use!")
